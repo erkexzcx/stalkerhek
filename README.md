@@ -59,15 +59,15 @@ Note that this will also stops your existing IPTV box from working. Reboot it so
 Install Kodi and install Stalker TV addon. Configure this addon and set the following details:
 
 * Server Address: `http://<ipaddr>/stalker_portal/c/` (you MUST enter full URL as shown. Use IP address of the device where this app is running.
-* Login - <anything>
-* Password - <anything>
-* token - <anything>
-* Serial Number - <anything>
-* Device ID - <anything>
-* Device ID2 - <anything>
-* Signature - <anything>
+* Login - *anything*
+* Password - *anything*
+* token - *anything*
+* Serial Number - *anything*
+* Device ID - *anything*
+* Device ID2 - *anything*
+* Signature - *anything*
   
-<anything> literally means anything. Like `asdfasdf`. :)
+*anything* literally means anything. Like `asdfasdf`. Dont leave empty fields. :)
   
 Restart Kodi - your IPTV should work in Kodi.
 
