@@ -1,33 +1,44 @@
 # WIP - Stalker-hek
 
-Every stalker account can only be used with single TV box, which means you can't share your Stalker IPTV account with friends or use it on several other devices.
+*Stalker* is a pretty popular IPTV streaming solution. Usually you can buy a TV box with preconfigured credentials and stalker portal (URL). Stalker TV box has it's own unique device ID (actually 2 IDs), signature, mac address and so on. On top of that, if you share your authentication details and set-up another TV box, the other one will get disconnected, making it possible to only watch on a single device at the same time.
 
-This application allows you to use your stalker IPTV on unlimited amount of devices, by using your single stalker account (yup, multiple TVs, sharing with friends etc).
+What if you want to watch the same IPTV on your Kodi box or different TV box? Or have the same IPTV on multiple TVs and watch at the same time? Or even share it with friends/relatives? Is it even possible? Eventually, it is!
+
+This application works as a gateway/proxy to the stalker portal. Basically define your stalker authentication details in this app, start it and make all your devices to use this app's address as a stalker portal. This way you can use unlimited amount of devices with a single account.
+
+This app is heavily work-in-progress and many critical things are not done yet:
+* Config file. Hardcoding settings is just ugly solution.
+* Binary. Who wants to run source code, when you can run native binary
+* Keep-alive mechanism
+* HTTP requests forwarding optimisation. I think I can make it run even faster.
+* Figure out how to use EPG from portal with Kodi (stalker addon settings)
+* Check possibility to convert from stalker format to XMLTV (M3U playlist), so you can use simple IPTV addon, or just VLC.
+* Find easier way to find details rather than using wireshark (and MITM attack)
 
 # How it works
 
-When this application is started, it authenticates with stalker portal using your defined account and defined portal URL. And the rest is just forwarding requests to your defined Stalker middleware, while ignoring authentication requests.
+Once this app is started, it immediatelly with your defined stalker portal using defined credentials and starts listening for requests. Then you need to set all your Stalker TV boxes to this app (from TV box perspective, this app is stalker portal now). And that's it - this app forwards pretty much all requests, while ignoring authentication reuests (that are responsible for disconnecting all other tv boxes that uses the same account).
 
-This is how your typical set-tup box works:
+This is how your typical set-tup box works now:
 ```
 [TV box] <--> [stalker portal]
 ```
 
-And this is how it would work with this app:
+And this is how it works with this app:
 ```
-[TV box] <--> [this app] <--> [stalker portal]
-[TV box] <--> 
-[TV box] <--> 
-[TV box] <--> 
+[TV box] <--> |this app| <--> [stalker portal]
+[TV box] <--> |        |
+[TV box] <--> |        |
+[TV box] <--> |        |
 ```
 
 # How to use
 
-This app is not finished at all, might contain bugs and "it works for me", so you have been warned.
+This app is incomplete, contains bugs and "it works for me", so you have been warned.
 
 ## 1. Extract stalker credentials (and other required stuff)
 
-Use wireshark. I used **capture** filter `port 80 and tcp[((tcp[12:1] & 0xf0) >> 2):4] = 0x47455420` and **display** filter `http.request.method == GET`. In case you want to spawn MITM attack, see [this](https://www.irongeek.com/i.php?page=security/arpspoof). You will need to restart IPTV box when captuing requests to see your IPTV box logging into stalker portal with stored credentials and other stuff.
+To extract all the authentication details, use wireshark to capture HTTP requests and analyse them by hand. I used **capture** filter `port 80 and tcp[((tcp[12:1] & 0xf0) >> 2):4] = 0x47455420` and **display** filter `http.request.method == GET`. You will likely want to use MITM attack using [arpspoof](https://www.irongeek.com/i.php?page=security/arpspoof). You will also need to restart TV box when capturing requests to see your TV box logging into stalker portal with stored authentication details.
 
 You will need the following details extracted from the wireshark logs:
 * sn
@@ -67,11 +78,6 @@ Install Kodi and install Stalker TV addon. Configure this addon and set the foll
 * Device ID2 - *anything*
 * Signature - *anything*
   
-*anything* literally means anything. Like `asdfasdf`. Dont leave empty fields. :)
+*anything* literally means anything. Like `asdfasdf`. Just don't leave empty fields.
   
-Restart Kodi - your IPTV should work in Kodi.
-
-# Other notes
-
-* I don't own any Stalker IPTV boxes. Used friend's box on weekend, so no active development. Maybe in the future. :)
-* Yes, this is Ugly Golang code. It was reverse engineering anyway, so I already rewrote it serveral times until got it to work.
+Restart Kodi - your IPTV should now work in Kodi.

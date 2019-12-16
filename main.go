@@ -8,16 +8,21 @@ import (
 	"strings"
 )
 
-const sn = "0000000000000"                                                           // Set your Serial Number
-const deviceID = "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"  // Set your device ID
-const deviceID2 = "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff" // Set your device ID2
-const signature = "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff" // Set your signature here
-const macEncoded = "00%3A00%3A00%3A00%3A00%3A00"                                     // Set your URL encoded MAC address
-const login = ""                                                                     // Set your URL encoded username
-const password = ""                                                                  // Set your URL encoded password
-const portalURLDomain = "http://domain.example.com"                                  // Must end withOUT slash at the end!
-
-const timeZone = "Europe%2FVilnius" // Update to your local timezone (URL encoded)
+// ===================================================================================
+//
+// Update only these values. Everything MUST BE URL ENCODED (as seen in wireshark URLs and cookies - unedited)
+//
+const sn = "0000000000000"                                                           // Set Serial Number
+const deviceID = "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"  // Set device ID
+const deviceID2 = "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff" // Set device ID2
+const signature = "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff" // Set signature here
+const macEncoded = "00%3A00%3A00%3A00%3A00%3A00"                                     // Set MAC address
+const login = ""                                                                     // Set username
+const password = ""                                                                  // Set password
+const portalURLDomain = "http://domain.example.com"                                  // IMPORTANT! Must end without slash at the end
+const timeZone = "Europe%2FVilnius"                                                  // Set local timezone
+//
+// ===================================================================================
 
 var token string
 
@@ -25,6 +30,7 @@ var httpClient = &http.Client{}
 
 func handleRequest(w http.ResponseWriter, r *http.Request) {
 
+	// This is everything what goes after hostname & port. Starts with slash:
 	URI := r.URL.RequestURI()
 
 	if strings.Contains(URI, "/load.php") {
@@ -39,9 +45,8 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Rewrite any identifying parameter's value, deviceID or sn:
+	// Rewrite any identifying parameter, such as serial number, username, device ID etc...
 	q := r.URL.Query()
-
 	_, ok := q["login"]
 	if ok {
 		q.Set("login", login)
@@ -68,7 +73,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 	}
 	r.URL.RawQuery = q.Encode()
 
-	// Perform request to real server and return output
+	// Forward request to stalker portal and return it's output and the same HTTP code
 	log.Println(portalURLDomain + r.URL.RequestURI())
 	resp, err := getRequest(portalURLDomain + r.URL.RequestURI())
 	if err != nil {
@@ -86,11 +91,16 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 func main() {
 	authenticate() // Authenticate with stalker portal
 
+	// TODO - I think we need to implement keep-alive mechanism as well. Every stalker client sends "watchdog" requests to the server
+	// to keep authentication alive (sends every X minutes), so would be great to do it from this client too and ignore all clients
+	// keep-alive requests
+
 	// Start listening for requests
 	http.HandleFunc("/", handleRequest)
-	log.Fatal(http.ListenAndServe(":80", nil))
+	log.Fatal(http.ListenAndServe(":80", nil)) // Note that to open/start listening on 0-1024 ports you need root access
 }
 
+// Returns performed request to given link. This also sets some header values, such as correct cookies and authorization token if it exists
 func getRequest(link string) (*http.Response, error) {
 
 	req, err := http.NewRequest("GET", link, nil)
@@ -110,8 +120,14 @@ func getRequest(link string) (*http.Response, error) {
 
 var tokenRegex = regexp.MustCompile(`"token"\s*:\s*"([A-Z0-9]+)"`)
 
+// Authenticate with stalker portal
 func authenticate() {
-	// Generate token (server will provide this):
+	// Server identifies us by token. This is a string and will be sent with each HTTP request.
+	//
+	// How it works: You send a request to the server (see below URL) with a suggested token ('token' parameter).
+	// Server checks if such token is in use. If in use - server will return randomly generated token in JSON and
+	// below code will extract it and use in each HTTP request. If token is not in use - server don't return new
+	// randomly generated token and authenticates using suggested token instead.
 	resp, err := getRequest(portalURLDomain + "/stalker_portal/server/load.php?type=stb&action=handshake&prehash=0&token=&JsHttpRequest=1-xml")
 	if err != nil {
 		log.Fatalln(err)
@@ -124,11 +140,11 @@ func authenticate() {
 	if len(parts) > 0 {
 		token = parts[1]
 	} else {
-		log.Fatalln("Unable to authenticate (step 1)")
+		log.Fatalln("Unable to authenticate at step 1. Just ignore and try again please!")
 	}
 	resp.Body.Close()
 
-	// Authorize this token (assosiate username & password with this token):
+	// Since we have a token, we need to authorize it (associate it with your credentials)
 	resp, err = getRequest(portalURLDomain + "/stalker_portal/server/load.php?type=stb&action=do_auth&login=" + login + "&password=" + password + "&device_id=" + deviceID + "&device_id2=" + deviceID2 + "&JsHttpRequest=1-xml")
 	if err != nil {
 		log.Fatalln(err)
@@ -139,6 +155,6 @@ func authenticate() {
 		log.Fatalln(err)
 	}
 	if !strings.Contains(string(body), "bool(true)") {
-		log.Fatalln("Unable to authenticate (step 2)")
+		log.Fatalln("Unable to authenticate at step 2. Check your credentials and try again")
 	}
 }
