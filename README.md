@@ -17,7 +17,7 @@ This app is heavily work-in-progress and many critical things are not done yet:
 
 # How it works
 
-Once this app is started, it immediatelly with your defined stalker portal using defined credentials and starts listening for requests. Then you need to set all your Stalker TV boxes to this app (from TV box perspective, this app is stalker portal now). And that's it - this app forwards pretty much all requests, while ignoring authentication reuests (that are responsible for disconnecting all other tv boxes that uses the same account).
+Once this app is started, it authenticates with your defined stalker portal using defined credentials and starts listening for connections from your devices. Then you need to set all your Stalker TV boxes to this app (from TV box perspective, this app is stalker portal now). And that's it - this app forwards pretty much all requests, while ignoring authentication reuests (that are responsible for disconnecting all other tv boxes that uses the same account).
 
 This is how your typical set-tup box works now:
 ```
@@ -80,4 +80,4 @@ Install Kodi and install Stalker TV addon. Configure this addon and set the foll
   
 *anything* literally means anything. Like `asdfasdf`. Just don't leave empty fields.
   
-Restart Kodi - your IPTV should now work in Kodi.
+Restart Kodi - your Stalker IPTV should work now.
