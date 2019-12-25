@@ -1,15 +1,10 @@
 package main
 
 import (
-	"bufio"
-	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
-	"net/url"
 	"regexp"
-	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -29,18 +24,7 @@ const password = ""                                                             
 const portalURLDomain = "http://domain.example.com"                                  // IMPORTANT! Must end without slash at the end
 const timeZone = "Europe%2FVilnius"                                                  // Set local timezone
 var token = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"                                       // Set token. It might be updated automatically if in use
-
 // ===================================================================================
-
-type tvchannel struct {
-	CMD              string
-	ResolvedLink     string
-	ResolvedLinkRoot string
-	Logo             string
-}
-
-var tvchannelsMap = make(map[string]*tvchannel)
-var tvChannelsMux sync.RWMutex
 
 // Store some outputs for re-use:
 var outputHandshake []byte
@@ -74,13 +58,6 @@ func main() {
 		}
 	}()
 
-	go func() {
-		for {
-			time.Sleep(15 * time.Second)
-			performResolvedM3U8KeepAlive()
-		}
-	}()
-
 	// Parse channels for M3U playlist
 	initializeM3U8Playlist()
 
@@ -97,232 +74,8 @@ func main() {
 	log.Fatal(http.ListenAndServe(":8987", nil))
 }
 
-func handleIPTVPlaylistRequest(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "#EXTM3U")
-
-	tvChannelsMux.RLock()
-	titles := make([]string, 0, len(tvchannelsMap))
-	for tvch := range tvchannelsMap {
-		titles = append(titles, tvch)
-	}
-	sort.Strings(titles)
-	for _, title := range titles {
-		fmt.Fprintf(w, "#EXTINF:-1 tvg-logo=\"%s\", %s\n%s\n\n", portalURLDomain+"/stalker_portal/misc/logos/320/"+tvchannelsMap[title].Logo, title, "http://"+r.Host+"/iptv/"+url.PathEscape(title)+".m3u8")
-	}
-	tvChannelsMux.RUnlock()
-}
-
-func print404(w *http.ResponseWriter, customMessage interface{}) {
-	log.Println(customMessage)
-	(*w).WriteHeader(http.StatusNotFound)
-	(*w).Write([]byte("404 page not found"))
-}
-
-func handleIPTVRequest(w http.ResponseWriter, r *http.Request) {
-	reqPath := strings.Replace(r.URL.RequestURI(), "/iptv/", "", 1)
-	reqPathParts := strings.SplitN(reqPath, "/", 2)
-	reqPathPartsLen := len(reqPathParts)
-
-	// Exit if no channel and/or no path provided:
-	if reqPathPartsLen == 0 {
-		print404(&w, "Unable to properly extract data from request '"+r.URL.Path+"'!")
-		return
-	}
-
-	// Remove ".m3u8" from channel name
-	if reqPathPartsLen == 1 {
-		reqPathParts[0] = strings.Replace(reqPathParts[0], ".m3u8", "", 1)
-	}
-
-	// Extract channel name:
-	encodedChannelName := &reqPathParts[0]
-	decodedChannelName, err := url.PathUnescape(*encodedChannelName)
-	if err != nil {
-		print404(&w, "Unable to decode channel '"+*encodedChannelName+"'!")
-		return
-	}
-
-	// Retrieve channel from channels map:
-	tvChannelsMux.RLock()
-	channel, ok := tvchannelsMap[decodedChannelName]
-	tvChannelsMux.RUnlock()
-	if !ok {
-		print404(&w, "Unable to find channel '"+decodedChannelName+"'!")
-		return
-	}
-
-	// For channel we need URL. For anything else we need URL root:
-	var requiredURL string
-	tvChannelsMux.RLock()
-	if reqPathPartsLen == 1 {
-		if channel.ResolvedLink == "" {
-			resolveChannel(channel)
-		}
-		requiredURL = channel.ResolvedLink
-	} else {
-		requiredURL = channel.ResolvedLinkRoot + reqPathParts[1]
-	}
-	tvChannelsMux.RUnlock()
-
-	if requiredURL == "" {
-		print404(&w, "Channel '"+decodedChannelName+"' does not have URL assigned!")
-		return
-	}
-
-	// Retrieve contents
-	resp, err := http.Get(requiredURL)
-	if err != nil {
-		print404(&w, err)
-		return
-	}
-	defer resp.Body.Close()
-
-	// Rewrite URI (just in case we got a redirect)
-	if reqPathPartsLen == 1 {
-		tvChannelsMux.RLock()
-		channel.ResolvedLink = resp.Request.URL.String()
-		channel.ResolvedLinkRoot = deleteAfterLastSlash(channel.ResolvedLink)
-		tvChannelsMux.RUnlock()
-	}
-
-	// If path ends with ".ts" - return raw fetched bytes
-	if strings.HasSuffix(r.URL.Path, ".ts") {
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			print404(&w, err)
-			return
-		}
-		w.WriteHeader(http.StatusOK)
-		w.Write(body)
-		return
-	}
-
-	// Write everything, but rewrite links to itself
-	w.WriteHeader(resp.StatusCode)
-	prefix := "http://" + r.Host + "/iptv/" + *encodedChannelName + "/"
-	scanner := bufio.NewScanner(resp.Body)
-	for scanner.Scan() {
-		line := scanner.Text()
-		if !strings.HasPrefix(line, "#") {
-			line = prefix + line
-		} else if strings.Contains(line, "URI=\"") && !strings.Contains(line, "URI=\"\"") {
-			line = strings.ReplaceAll(line, "URI=\"", "URI=\""+prefix)
-		}
-		w.Write([]byte(line + "\n"))
-	}
-}
-
 func deleteAfterLastSlash(str string) string {
 	return str[0 : strings.LastIndex(str, "/")+1]
-}
-
-func handleStalkerRequest(w http.ResponseWriter, r *http.Request) {
-
-	q := r.URL.Query()
-
-	_, hasAction := q["action"]
-
-	if r.URL.Path == "/stalker_portal/server/load.php" {
-		if hasAction {
-			switch q["action"][0] {
-			case "logout":
-				log.Println("Ignoring request: " + portalURLDomain + r.URL.String())
-				return
-			case "handshake":
-				log.Println("Ignoring request: " + portalURLDomain + r.URL.String())
-				w.Write(outputHandshake)
-				return
-			case "do_auth":
-				log.Println("Ignoring request: " + portalURLDomain + r.URL.String())
-				w.Write(outputDoAuth)
-				return
-			case "get_profile":
-				log.Println("Ignoring request: " + portalURLDomain + r.URL.String())
-				w.Write(outputGetProfile)
-				return
-			case "get_events":
-				_, ok := q["type"]
-				if ok && q["type"][0] == "watchdog" {
-					cacheMutex.RLock()
-					w.Write(*(cacheMap["watchdog"]))
-					cacheMutex.RUnlock()
-					return
-				}
-				log.Println("Ignoring request: " + portalURLDomain + r.URL.String())
-				w.Write(outputGetProfile)
-				return
-			case "get_epg_info":
-				log.Println("Ignoring request: " + portalURLDomain + r.URL.String())
-				cacheMutex.RLock()
-				w.Write(*(cacheMap["epg"]))
-				cacheMutex.RUnlock()
-				return
-			}
-		}
-	}
-
-	// Rewrite any identifying parameter, such as serial number, username, device ID etc...
-
-	_, ok := q["login"]
-	if ok {
-		q.Set("login", login)
-	}
-	_, ok = q["password"]
-	if ok {
-		q.Set("password", password)
-	}
-	_, ok = q["sn"]
-	if ok {
-		q.Set("sn", sn)
-	}
-	_, ok = q["device_id"]
-	if ok {
-		q.Set("device_id", deviceID)
-	}
-	_, ok = q["device_id2"]
-	if ok {
-		q.Set("device_id2", deviceID2)
-	}
-	_, ok = q["signature"]
-	if ok {
-		q.Set("signature", signature)
-	}
-	r.URL.RawQuery = q.Encode()
-
-	requestURI := r.URL.RequestURI()
-
-	if hasAction || !strings.HasSuffix(r.URL.Path, ".php") {
-		cacheMutex.RLock()
-		content, ok := cacheMap[requestURI]
-		cacheMutex.RUnlock()
-		if ok {
-			w.Write(*content)
-			log.Println("Loaded from cache", portalURLDomain+requestURI)
-			return
-		}
-	}
-
-	// Forward request to stalker portal and return it's output and the same HTTP code
-	log.Println(portalURLDomain + requestURI)
-	resp, err := getRequest(portalURLDomain + requestURI)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	// Save cache:
-	if hasAction || !strings.HasSuffix(r.URL.Path, ".php") {
-		cacheMutex.Lock()
-		cacheMap[requestURI] = &body
-		cacheMutex.Unlock()
-	}
-
-	w.WriteHeader(resp.StatusCode)
-	w.Write(body)
 }
 
 // Returns performed request to given link. This also sets some header values, such as correct cookies and authorization token if it exists
@@ -374,6 +127,7 @@ func authenticate() {
 		log.Fatalln(err)
 	}
 	if !strings.Contains(string(outputDoAuth), "bool(true)") {
+		log.Println(string(outputDoAuth))
 		log.Fatalln("Unable to authenticate at step 2. Check your credentials and try again")
 	}
 
@@ -421,83 +175,4 @@ func performEPGUpdate() {
 	cacheMutex.Lock()
 	cacheMap["epg"] = &content
 	cacheMutex.Unlock()
-}
-
-func performResolvedM3U8KeepAlive() {
-	tvChannelsMux.RLock()
-	for k, v := range tvchannelsMap {
-		if v.ResolvedLink == "" {
-			return
-		}
-		go func(k string, v *tvchannel) {
-			resp, err := http.Get(v.ResolvedLink)
-			if err != nil {
-				log.Println("Failed to keep-alive channel", k, "with url", *v)
-				return
-			}
-			log.Println("Keep-alive", *v)
-			resp.Body.Close()
-		}(k, v)
-	}
-	tvChannelsMux.RUnlock()
-}
-
-func initializeM3U8Playlist() {
-
-	type cstruct struct {
-		Js struct {
-			Data []struct {
-				Name string `json:"name"`
-				Cmd  string `json:"cmd"`
-				Logo string `json:"logo"`
-			} `json:"data"`
-		} `json:"js"`
-	}
-	var cs cstruct
-
-	req, err := getRequest(portalURLDomain + "/stalker_portal/server/load.php?type=itv&action=get_all_channels&force_ch_link_check=&JsHttpRequest=1-xml")
-	if err != nil {
-		panic(err)
-	}
-	defer req.Body.Close()
-	content, err := ioutil.ReadAll(req.Body)
-	if err != nil {
-		panic(err)
-	}
-	if err := json.Unmarshal(content, &cs); err != nil {
-		panic(err)
-	}
-
-	for _, v := range cs.Js.Data {
-		tvchannelsMap[v.Name] = &tvchannel{
-			CMD:  v.Cmd,
-			Logo: v.Logo,
-		}
-	}
-}
-
-func resolveChannel(channel *tvchannel) {
-
-	type tmpstruct struct {
-		Js struct {
-			Cmd string `json:"cmd"`
-		} `json:"js"`
-	}
-	var tmp tmpstruct
-
-	// Mutex is not needed, since parent codeblock is already RLocked
-	resp, err := getRequest(portalURLDomain + "/stalker_portal/server/load.php?action=create_link&type=itv&cmd=" + url.PathEscape(channel.CMD) + "&JsHttpRequest=1-xml")
-	if err != nil {
-		log.Println("Failed to resolve channel", channel.ResolvedLink)
-	}
-	defer resp.Body.Close()
-	content, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		panic(err)
-	}
-	if err := json.Unmarshal(content, &tmp); err != nil {
-		panic(err)
-	}
-	channel.ResolvedLink = strings.Split(tmp.Js.Cmd, " ")[1]
-	channel.ResolvedLinkRoot = deleteAfterLastSlash(channel.ResolvedLink)
 }
