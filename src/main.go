@@ -50,16 +50,13 @@ func main() {
 		}
 	}()
 
-	performEPGUpdate()
-	go func() {
-		for {
-			time.Sleep(2 * time.Hour)
-			performEPGUpdate()
-		}
-	}()
-
-	// Parse channels for M3U playlist
-	initializeM3U8Playlist()
+	updateM3U8Playlist()
+	// go func() {
+	// 	for {
+	// 		time.Sleep(24 * time.Hour)
+	// 		updateM3U8Playlist()
+	// 	}
+	// }()
 
 	log.Println("Started!")
 
