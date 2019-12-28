@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -162,11 +161,12 @@ func handleChannelRequest(w *http.ResponseWriter, r *http.Request, c *tvchannel,
 		(*w).Write(content)
 		return
 	} else if contentType == "application/octet-stream" {
-		for k, v := range resp.Header {
-			(*w).Header().Set(k, v[0])
-		}
-		(*w).WriteHeader(resp.StatusCode)
-		io.Copy(*w, resp.Body)
+		write500(w, "application/octet-stream is not supported yet")
+		// for k, v := range resp.Header {
+		// 	(*w).Header().Set(k, v[0])
+		// }
+		// (*w).WriteHeader(resp.StatusCode)
+		// io.Copy(*w, resp.Body)
 		return
 	} else if contentType == "application/vnd.apple.mpegurl" || contentType == "application/x-mpegurl" {
 		// If M3U/M3U8 content - rewrite links
@@ -240,11 +240,12 @@ func handleContentRequest(w *http.ResponseWriter, r *http.Request, c *tvchannel,
 		(*w).Write(content)
 		return
 	} else if contentType == "application/octet-stream" {
-		for k, v := range resp.Header {
-			(*w).Header().Set(k, v[0])
-		}
-		(*w).WriteHeader(resp.StatusCode)
-		io.Copy(*w, resp.Body)
+		write500(w, "application/octet-stream is not supported yet")
+		// for k, v := range resp.Header {
+		// 	(*w).Header().Set(k, v[0])
+		// }
+		// (*w).WriteHeader(resp.StatusCode)
+		// io.Copy(*w, resp.Body)
 		return
 	} else if contentType == "application/vnd.apple.mpegurl" || contentType == "application/x-mpegurl" {
 		// If M3U/M3U8 content - rewrite links
