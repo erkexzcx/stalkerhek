@@ -14,35 +14,30 @@ type tvchannel struct {
 	Cmd               string
 	Logo              string
 	Link              string
-	LastLinkAccess    time.Time
+	LinkAccessTime    time.Time
+	LinkRoot          string
+	SessionUpdateTime time.Time
 	Mux               sync.RWMutex
-	Cache             cache
-	CacheCreationTime time.Time
-	CacheMux          sync.Mutex
 
-	LinkRoot      string
-	LinksCache    map[string]*cache
-	LinksCacheMux sync.RWMutex
-}
-
-type cache struct {
-	Content     []byte
-	ContentType string
-}
-
-func (c *tvchannel) LinkStillValid() bool {
-	c.Mux.RLock()
-	defer c.Mux.RUnlock()
-	if c.LastLinkAccess.IsZero() || time.Since(c.LastLinkAccess).Seconds() > 15 {
-		return false
-	}
-	return true
+	// Store link's cache here
+	Cache            []byte
+	CacheContentType string
+	CacheMux         sync.Mutex
 }
 
 func (c *tvchannel) LinkCacheValid() bool {
 	c.Mux.RLock()
 	defer c.Mux.RUnlock()
-	if c.CacheCreationTime.IsZero() || time.Since(c.CacheCreationTime).Seconds() > 3 {
+	if c.LinkAccessTime.IsZero() || time.Since(c.LinkAccessTime).Seconds() > 3 || len(c.Cache) == 0 {
+		return false
+	}
+	return true
+}
+
+func (c *tvchannel) SessionValid() bool {
+	c.Mux.RLock()
+	defer c.Mux.RUnlock()
+	if c.SessionUpdateTime.IsZero() || time.Since(c.SessionUpdateTime).Seconds() > 30 {
 		return false
 	}
 	return true
@@ -51,7 +46,7 @@ func (c *tvchannel) LinkCacheValid() bool {
 func (c *tvchannel) RefreshLink() {
 	// Create TV channel API link
 	c.Mux.RLock()
-	link := portalURLDomain + "/stalker_portal/server/load.php?action=create_link&type=itv&cmd=" + url.PathEscape(c.Cmd) + "&JsHttpRequest=1-xml"
+	link := conf.Portal + "server/load.php?action=create_link&type=itv&cmd=" + url.PathEscape(c.Cmd) + "&JsHttpRequest=1-xml"
 	c.Mux.RUnlock()
 
 	// Query that API link and download content
@@ -82,9 +77,14 @@ func (c *tvchannel) RefreshLink() {
 		c.Mux.Lock()
 		c.Link = strs[1]
 		c.LinkRoot = deleteAfterLastSlash(strs[1])
-		c.LastLinkAccess = time.Now()
+		c.LinkAccessTime = time.Now()
+		c.SessionUpdateTime = time.Now()
 		c.Mux.Unlock()
 	} else {
 		log.Println("Failed to extract TV channel URL from Stalker API...")
 	}
+}
+
+func deleteAfterLastSlash(str string) string {
+	return str[0 : strings.LastIndex(str, "/")+1]
 }

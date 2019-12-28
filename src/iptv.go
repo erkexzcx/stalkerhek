@@ -2,13 +2,13 @@ package main
 
 import (
 	"bufio"
-	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
-	"net/http/httputil"
 	"net/url"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -16,271 +16,290 @@ import (
 
 var tvchannelsMap = make(map[string]*tvchannel)
 
-func handleIPTVPlaylistRequest(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "#EXTM3U")
-
+func handlePlaylistRequest(w http.ResponseWriter, r *http.Request) {
+	// Sort map
 	titles := make([]string, 0, len(tvchannelsMap))
 	for tvch := range tvchannelsMap {
 		titles = append(titles, tvch)
 	}
 	sort.Strings(titles)
+
+	//w.Header().Set("Content-Type", "application/vnd.apple.mpegurl")
+	w.WriteHeader(200)
+
+	fmt.Fprintln(w, "#EXTM3U")
 	for _, title := range titles {
 		tvchannelsMap[title].Mux.RLock()
-		fmt.Fprintf(w, "#EXTINF:-1 tvg-logo=\"%s\", %s\n%s\n", portalURLDomain+"/stalker_portal/misc/logos/320/"+tvchannelsMap[title].Logo, title, "http://"+r.Host+"/iptv/"+url.PathEscape(title)+".m3u8")
+		channelLink := "http://" + r.Host + "/iptv/" + url.PathEscape(title) + ".m3u8"
+		channelLogo := conf.Portal + "misc/logos/320/" + tvchannelsMap[title].Logo
+		fmt.Fprintf(w, "#EXTINF:-1 tvg-logo=\"%s\", %s\n%s\n", channelLogo, title, channelLink)
 		tvchannelsMap[title].Mux.RUnlock()
 	}
 }
 
-func print500(w *http.ResponseWriter, customMessage ...interface{}) {
+func write500(w *http.ResponseWriter, customMessage ...interface{}) {
 	log.Println(customMessage...)
-	(*w).WriteHeader(http.StatusNotFound)
-	(*w).Write([]byte("404 page not found"))
+	(*w).WriteHeader(http.StatusInternalServerError)
+	(*w).Write([]byte("Internal server error"))
 }
 
-func handleIPTVRequest(w http.ResponseWriter, r *http.Request) {
+func quickWrite(w *http.ResponseWriter, content []byte, contentType *string, httpStatus int) {
+	(*w).Header().Set("Content-Type", *contentType)
+	(*w).WriteHeader(httpStatus)
+	(*w).Write(content)
+}
+
+func handleRequest(w http.ResponseWriter, r *http.Request) {
 	reqPath := strings.Replace(r.URL.RequestURI(), "/iptv/", "", 1)
 	reqPathParts := strings.SplitN(reqPath, "/", 2)
-
-	// Requested TV channel's title is reqPathParts[0]
-	// Requested data (relative path) is reqPathParts[1]
-
-	// Invalid request or if TV channel name length is lower than len(title)+len(".m3u8")
 	if len(reqPathParts) == 0 {
-		print500(&w, "Invalid request:", r.URL.Path)
+		write500(&w, "Invalid request")
 	}
-
-	// Remove ".m3u8" suffix
 	reqPathParts[0] = strings.TrimSuffix(reqPathParts[0], ".m3u8")
 
-	// Path decode channel name and attempt to find it in the map
-	decodedTitle, _ := url.PathUnescape(reqPathParts[0])
-	c, ok := tvchannelsMap[decodedTitle]
+	// Decode extracted tv channel name and find tv channel obj
+	unescapedTitle, err := url.PathUnescape(reqPathParts[0])
+	if err != nil {
+		write500(&w, err)
+		return
+	}
+	c, ok := tvchannelsMap[unescapedTitle]
 	if !ok {
-		print500(&w, "Unable to find channel", decodedTitle)
+		write500(nil, "TV channel '"+unescapedTitle+"' does not exist")
 		return
 	}
 
 	if len(reqPathParts) == 1 {
-		log.Println("Query:", reqPathParts[0])
-		handleIPTVChannelRequest(&w, r, c, &reqPathParts[0])
+		log.Println("Received request [1]:", reqPathParts[0])
 	} else {
-		log.Println("Query:", reqPathParts[0], reqPathParts[1])
-		handleIPTVDataRequest(&w, r, c, &reqPathParts[0], &reqPathParts[1])
+		log.Println("Received request [2]:", reqPathParts[0], reqPathParts[1])
 	}
 
-}
+	if !c.SessionValid() {
+		log.Println("Getting new URL from Stalker API...")
+		c.RefreshLink()
+	}
 
-func handleIPTVChannelRequest(w *http.ResponseWriter, r *http.Request, c *tvchannel, t *string) {
+	// Build destination URL
+	var requiredURL string
+	c.Mux.RLock()
+	if len(reqPathParts) == 1 {
+		requiredURL = c.Link
+	} else {
+		requiredURL = c.LinkRoot + reqPathParts[1]
+	}
+	c.Mux.RUnlock()
 
-	// Server cache if still valid
-	c.CacheMux.Lock()
-	defer c.CacheMux.Unlock()
-	if c.LinkCacheValid() {
-		log.Println("Loading channel link content from cache...")
-		c.Mux.Lock()
-		(*w).Header().Set("Content-Type", c.Cache.ContentType)
-		(*w).WriteHeader(http.StatusOK)
-		(*w).Write(c.Cache.Content)
-		c.Mux.Unlock()
+	// Convert URL to URL object
+	myURL, err := url.Parse(requiredURL)
+	if err != nil {
+		write500(&w, "Invalid request")
 		return
 	}
 
-	// Update links from stalker if links are no longer valid
-	var updateLinks bool
-	if !c.LinkStillValid() {
-		log.Println("Retrieving new channel link...")
-		c.RefreshLink()
-		updateLinks = true
+	if len(reqPathParts) == 1 {
+		// Channel-only request
+		handleChannelRequest(&w, r, c, &reqPathParts[0], myURL)
+	} else {
+		// Channel with relative path request
+		handleContentRequest(&w, r, c, &reqPathParts[0], myURL)
+	}
+}
+
+func handleChannelRequest(w *http.ResponseWriter, r *http.Request, c *tvchannel, title *string, u *url.URL) {
+	// Lock mutex so no other request is requesting cache
+	// If it's locked - someone is already working on it, so just wait for cache
+	c.CacheMux.Lock()
+	defer c.CacheMux.Unlock()
+	if c.LinkCacheValid() {
+		log.Println("Serving channel's cache...")
+		quickWrite(w, c.Cache, &(c.CacheContentType), 200)
+		return
 	}
 
-	// Get link:
-	c.Mux.RLock()
-	requiredLink := c.Link
-	c.Mux.RUnlock()
-
 	// Retrieve data
-	resp, err := http.Get(requiredLink)
+	resp, err := http.Get(u.String())
 	if err != nil {
-		print500(w, err)
+		write500(w, err)
 		return
 	}
 	defer resp.Body.Close()
 
 	// In case we got redirect - update channel's links
-	if updateLinks {
+	if u.String() != resp.Request.URL.String() {
 		c.Mux.Lock()
 		c.Link = resp.Request.URL.String()
 		c.LinkRoot = deleteAfterLastSlash(c.Link)
+		u = resp.Request.URL
 		c.Mux.Unlock()
 	}
 
-	returnOutput(w, r, c, t, resp, requiredLink, true)
+	contentType := strings.ToLower(resp.Header.Get("Content-Type"))
+
+	if resp.StatusCode != 200 {
+		quickWrite(w, []byte("HTTP Code not 200"), &contentType, resp.StatusCode)
+		return
+	}
+
+	log.Println("Channel:", resp.StatusCode, contentType)
+
+	c.Mux.Lock()
+	c.SessionUpdateTime = time.Now()
+	c.LinkAccessTime = time.Now()
+	c.Mux.Unlock()
+
+	log.Println("Final url:", u.String(), resp.StatusCode, contentType)
+
+	if strings.HasPrefix(contentType, "video/") || strings.HasPrefix(contentType, "audio/") {
+		content, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			write500(w, err)
+			return
+		}
+		saveCache(u.String(), &content, &contentType)
+		(*w).Header().Set("Content-Type", contentType)
+		(*w).WriteHeader(resp.StatusCode)
+		(*w).Write(content)
+		return
+	} else if contentType == "application/octet-stream" {
+		for k, v := range resp.Header {
+			(*w).Header().Set(k, v[0])
+		}
+		(*w).WriteHeader(resp.StatusCode)
+		io.Copy(*w, resp.Body)
+		return
+	} else if contentType == "application/vnd.apple.mpegurl" || contentType == "application/x-mpegurl" {
+		// If M3U/M3U8 content - rewrite links
+		c.Mux.RLock()
+		linkRoot := c.LinkRoot
+		c.Mux.RUnlock()
+		prefix := "http://" + r.Host + "/iptv/" + *title + "/"
+		scanner := bufio.NewScanner(resp.Body)
+		content := []byte(rewriteLinks(&prefix, &linkRoot, scanner))
+
+		// Cache mux is already locked
+		c.Cache = content
+		c.CacheContentType = contentType
+
+		(*w).Header().Set("Content-Type", contentType)
+		(*w).WriteHeader(200)
+		(*w).Write(content)
+		return
+	} else {
+		write500(w, "Unsupported contentType:", contentType)
+		return
+	}
 }
 
-func handleIPTVDataRequest(w *http.ResponseWriter, r *http.Request, c *tvchannel, t, d *string) {
-	// Get link:
-	c.Mux.RLock()
-	requiredLink := c.LinkRoot + *d
-	c.Mux.RUnlock()
-
-	// Attempt to retrieve it from cache
-	c.LinksCacheMux.Lock()
-	defer c.LinksCacheMux.Unlock()
-	linkCache, exists := c.LinksCache[requiredLink]
-	if exists {
-		log.Println("Loading media from cache...")
-		(*w).Header().Set("Content-Type", linkCache.ContentType)
-		(*w).WriteHeader(http.StatusOK)
-		(*w).Write(linkCache.Content)
+func handleContentRequest(w *http.ResponseWriter, r *http.Request, c *tvchannel, title *string, u *url.URL) {
+	if content, contentType, ok := loadCache(u.String()); ok {
+		log.Println("Serving link cache...")
+		quickWrite(w, content, &(contentType), 200)
 		return
 	}
 
 	// Retrieve data
-	resp, err := http.Get(requiredLink)
+	resp, err := http.Get(u.String())
 	if err != nil {
-		print500(w, err)
+		write500(w, err)
 		return
 	}
 	defer resp.Body.Close()
 
-	returnOutput(w, r, c, t, resp, requiredLink, false)
-}
+	c.Mux.Lock()
+	c.SessionUpdateTime = time.Now()
+	c.Mux.Unlock()
 
-func returnOutput(w *http.ResponseWriter, r *http.Request, c *tvchannel, t *string, resp *http.Response, u string, cr bool) {
-	contentType := resp.Header.Get("Content-Type")
-	log.Println(u, resp.StatusCode, contentType)
+	contentType := strings.ToLower(resp.Header.Get("Content-Type"))
 
 	if resp.StatusCode != 200 {
-		(*w).Header().Set("Content-Type", contentType)
-		(*w).WriteHeader(resp.StatusCode)
+		quickWrite(w, []byte("HTTP Code not 200"), &contentType, resp.StatusCode)
 		return
 	}
+
+	// Sometime's we need to follow more links, and eventually they become root URLs...
+	if (contentType == "application/vnd.apple.mpegurl" || contentType == "application/x-mpegurl") && strings.HasSuffix(strings.ToLower(u.RequestURI()), ".m3u8") {
+		c.Mux.Lock()
+		c.Link = resp.Request.URL.String()
+		c.LinkRoot = deleteAfterLastSlash(c.Link)
+		u = resp.Request.URL
+		c.Mux.Unlock()
+	}
+
+	log.Println("Final url:", u.String(), resp.StatusCode, contentType)
 
 	if strings.HasPrefix(contentType, "video/") || strings.HasPrefix(contentType, "audio/") {
-		body, err := ioutil.ReadAll(resp.Body)
+		content, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			print500(w, err)
+			write500(w, err)
 			return
 		}
-		// Update cache
-		if !cr {
-			c.LinksCache[u] = &cache{
-				ContentType: contentType,
-				Content:     body,
-			}
-			// Weird approach, but gotta get it work first
-			go func() {
-				time.Sleep(10 * time.Second)
-				c.LinksCacheMux.Lock()
-				delete(c.LinksCache, u)
-				c.LinksCacheMux.Unlock()
-			}()
-		}
-		// Write output
+		saveCache(u.String(), &content, &contentType)
 		(*w).Header().Set("Content-Type", contentType)
 		(*w).WriteHeader(resp.StatusCode)
-		(*w).Write(body)
+		(*w).Write(content)
 		return
-	}
-
-	if contentType == "application/octet-stream" {
-		myurl, _ := url.Parse(u)
-		proxy := httputil.NewSingleHostReverseProxy(myurl)
-
-		// Update the headers to a	log.Println(resp.StatusCode)	log.Println(resp.StatusCode)llow for SSL redirection
-		r.URL.Host = myurl.Host
-		r.URL.Scheme = myurl.Scheme
-		r.Host = myurl.Host
-
-		// Note that ServeHttp is non blocking and uses a go routine under the hood
-		proxy.ServeHTTP(*w, r)
-		return
-	}
-
-	(*w).Header().Set("Content-Type", contentType)
-	(*w).WriteHeader(resp.StatusCode)
-
-	prefix := "http://" + r.Host + "/iptv/" + *t + "/"
-	scanner := bufio.NewScanner(resp.Body)
-	content := []byte(rewriteLinks(prefix, scanner))
-	(*w).Write(content)
-
-	if cr {
-		log.Println("Updating cache...")
-		c.Cache.Content = content
-		c.CacheCreationTime = time.Now()
-	} else {
-		c.LinksCache[u] = &cache{
-			ContentType: contentType,
-			Content:     content,
+	} else if contentType == "application/octet-stream" {
+		for k, v := range resp.Header {
+			(*w).Header().Set(k, v[0])
 		}
-		//Weird approach, but gotta get it work first
-		go func() {
-			time.Sleep(10 * time.Second)
-			c.LinksCacheMux.Lock()
-			defer c.LinksCacheMux.Unlock()
-			delete(c.LinksCache, u)
-		}()
+		(*w).WriteHeader(resp.StatusCode)
+		io.Copy(*w, resp.Body)
+		return
+	} else if contentType == "application/vnd.apple.mpegurl" || contentType == "application/x-mpegurl" {
+		// If M3U/M3U8 content - rewrite links
+		c.Mux.RLock()
+		linkRoot := c.LinkRoot
+		c.Mux.RUnlock()
+
+		prefix := "http://" + r.Host + "/iptv/" + *title + "/"
+		scanner := bufio.NewScanner(resp.Body)
+		content := []byte(rewriteLinks(&prefix, &linkRoot, scanner))
+
+		(*w).Header().Set("Content-Type", contentType)
+		(*w).WriteHeader(resp.StatusCode)
+		(*w).Write(content)
+		return
+	} else {
+		write500(w, "Unsupported contentType:", contentType)
+		return
 	}
 }
 
-func rewriteLinks(prefix string, scanner *bufio.Scanner) string {
+var reURILinkExtract = regexp.MustCompile(`URI="([^"]*)"`)
+
+func rewriteLinks(prefix *string, linkRoot *string, scanner *bufio.Scanner) string {
 	var sb strings.Builder
+
+	linkRootURL, _ := url.Parse(*linkRoot) // It will act as a base URL for full URLs
+
+	modifyLink := func(link string) string {
+		switch {
+		case strings.HasPrefix(link, "//"):
+			tmpURL, _ := url.Parse(link)
+			tmp2URL, _ := url.Parse(tmpURL.RequestURI())
+			link = (linkRootURL.ResolveReference(tmp2URL)).String()
+			return *prefix + strings.ReplaceAll(link, *linkRoot, "")
+		case strings.HasPrefix(link, "/"):
+			tmp2URL, _ := url.Parse(link)
+			link = (linkRootURL.ResolveReference(tmp2URL)).String()
+			return *prefix + strings.ReplaceAll(link, *linkRoot, "")
+		default:
+			return *prefix + link
+		}
+	}
+
 	for scanner.Scan() {
 		line := scanner.Text()
 		if !strings.HasPrefix(line, "#") {
-			line = prefix + line
+			line = modifyLink(line)
 		} else if strings.Contains(line, "URI=\"") && !strings.Contains(line, "URI=\"\"") {
-			line = strings.ReplaceAll(line, "URI=\"", "URI=\""+prefix)
+			link := reURILinkExtract.FindStringSubmatch(line)[1]
+			line = reURILinkExtract.ReplaceAllString(line, `URI="`+modifyLink(link)+`"`)
 		}
 		sb.WriteString(line)
 		sb.WriteByte('\n')
 	}
+
 	return sb.String()
-}
-
-func updateM3U8Playlist() {
-
-	type cstruct struct {
-		Js struct {
-			Data []struct {
-				Name string `json:"name"`
-				Cmd  string `json:"cmd"`
-				Logo string `json:"logo"`
-			} `json:"data"`
-		} `json:"js"`
-	}
-	var cs cstruct
-
-	// content, err := ioutil.ReadFile("/tmp/channelsCache")
-	// if err != nil {
-	// 	panic(err)
-	// }
-
-	req, err := getRequest(portalURLDomain + "/stalker_portal/server/load.php?type=itv&action=get_all_channels&force_ch_link_check=&JsHttpRequest=1-xml")
-	if err != nil {
-		panic(err)
-	}
-	defer req.Body.Close()
-	content, err := ioutil.ReadAll(req.Body)
-	if err != nil {
-		panic(err)
-	}
-
-	// err = ioutil.WriteFile("/tmp/channelsCache", content, 0644)
-	// if err != nil {
-	// 	panic(err)
-	// }
-
-	if err := json.Unmarshal(content, &cs); err != nil {
-		panic(err)
-	}
-
-	for _, v := range cs.Js.Data {
-		tvchannelsMap[v.Name] = &tvchannel{
-			Cmd:        v.Cmd,
-			Logo:       v.Logo,
-			LinksCache: make(map[string]*cache),
-		}
-	}
 }
