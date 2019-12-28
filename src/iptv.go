@@ -65,7 +65,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 	}
 	c, ok := tvchannelsMap[unescapedTitle]
 	if !ok {
-		write500(nil, "TV channel '"+unescapedTitle+"' does not exist")
+		write500(&w, "TV channel '"+unescapedTitle+"' does not exist")
 		return
 	}
 
