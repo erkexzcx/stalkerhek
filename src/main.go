@@ -241,20 +241,20 @@ func generatePlaylist() {
 	}
 	var cs cstruct
 
-	content, err := ioutil.ReadFile("/tmp/channelsCache")
+	// content, err := ioutil.ReadFile("/tmp/channelsCache")
+	// if err != nil {
+	// 	panic(err)
+	// }
+
+	req, err := getRequest(conf.Portal + "server/load.php?type=itv&action=get_all_channels&force_ch_link_check=&JsHttpRequest=1-xml")
 	if err != nil {
 		panic(err)
 	}
-
-	// req, err := getRequest(conf.Portal + "server/load.php?type=itv&action=get_all_channels&force_ch_link_check=&JsHttpRequest=1-xml")
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// defer req.Body.Close()
-	// content, err := ioutil.ReadAll(req.Body)
-	// if err != nil {
-	// 	panic(err)
-	// }
+	defer req.Body.Close()
+	content, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		panic(err)
+	}
 
 	// err = ioutil.WriteFile("/tmp/channelsCache", content, 0644)
 	// if err != nil {
