@@ -84,7 +84,7 @@ func getRequestAPI(link string) (*http.Response, error) {
 }
 
 var httpClientIPTV = &http.Client{
-	Timeout: time.Second * 3,
+	Timeout: time.Second * 2,
 }
 
 func getRequestIPTV(link string) (*http.Response, error) {
@@ -92,10 +92,7 @@ func getRequestIPTV(link string) (*http.Response, error) {
 	if err != nil {
 		log.Fatalln(err)
 	}
-
-	req.Header.Set("User-Agent", "Mozilla/5.0 (QtEmbedded; U; Linux; C) AppleWebKit/533.3 (KHTML, like Gecko) MAG200 stbapp ver: 4 rev: 2116 Mobile Safari/533.3")
-	req.Header.Set("X-User-Agent", "Model: MAG254; Link: Ethernet")
-
+	req.Header.Set("User-Agent", "Lavf/53.32.100")
 	return httpClientAPI.Do(req)
 }
 

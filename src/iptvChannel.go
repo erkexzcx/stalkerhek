@@ -37,7 +37,7 @@ func (c *tvchannel) LinkCacheValid() bool {
 func (c *tvchannel) SessionValid() bool {
 	c.Mux.RLock()
 	defer c.Mux.RUnlock()
-	if c.SessionUpdateTime.IsZero() || time.Since(c.SessionUpdateTime).Seconds() > 20 {
+	if c.SessionUpdateTime.IsZero() || time.Since(c.SessionUpdateTime).Seconds() > 30 {
 		return false
 	}
 	return true

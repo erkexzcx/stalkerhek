@@ -137,6 +137,7 @@ func handleChannelRequest(w *http.ResponseWriter, r *http.Request, c *tvchannel,
 
 	if resp.StatusCode != 200 {
 		quickWrite(w, []byte("HTTP Code not 200"), &contentType, resp.StatusCode)
+		log.Println("Channel", u.String()+":", resp.Status)
 		return
 	}
 
@@ -209,6 +210,7 @@ func handleContentRequest(w *http.ResponseWriter, r *http.Request, c *tvchannel,
 
 	if resp.StatusCode != 200 {
 		quickWrite(w, []byte("HTTP Code not 200"), &contentType, resp.StatusCode)
+		log.Println("Media", u.String()+":", resp.Status)
 		return
 	}
 
