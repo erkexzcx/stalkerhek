@@ -65,9 +65,11 @@ func main() {
 	log.Fatal(http.ListenAndServe(":8987", nil))
 }
 
-var httpClient = &http.Client{}
+var httpClientAPI = &http.Client{
+	Timeout: time.Second * 10,
+}
 
-func getRequest(link string) (*http.Response, error) {
+func getRequestAPI(link string) (*http.Response, error) {
 	req, err := http.NewRequest("GET", link, nil)
 	if err != nil {
 		log.Fatalln(err)
@@ -78,7 +80,23 @@ func getRequest(link string) (*http.Response, error) {
 	req.Header.Set("Authorization", "Bearer "+conf.Token)
 	req.Header.Set("Cookie", "PHPSESSID=null; sn="+conf.SerialNumber+"; mac="+conf.MAC+"; stb_lang=en; timezone="+conf.TimeZone)
 
-	return httpClient.Do(req)
+	return httpClientAPI.Do(req)
+}
+
+var httpClientIPTV = &http.Client{
+	Timeout: time.Second * 3,
+}
+
+func getRequestIPTV(link string) (*http.Response, error) {
+	req, err := http.NewRequest("GET", link, nil)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	req.Header.Set("User-Agent", "Mozilla/5.0 (QtEmbedded; U; Linux; C) AppleWebKit/533.3 (KHTML, like Gecko) MAG200 stbapp ver: 4 rev: 2116 Mobile Safari/533.3")
+	req.Header.Set("X-User-Agent", "Model: MAG254; Link: Ethernet")
+
+	return httpClientAPI.Do(req)
 }
 
 func authenticate() {
@@ -89,7 +107,7 @@ func authenticate() {
 	}
 	var tmpToken tokenStruct
 
-	resp, err := getRequest(conf.Portal + "server/load.php?type=stb&action=handshake&prehash=0&token=" + conf.Token + "&JsHttpRequest=1-xml")
+	resp, err := getRequestAPI(conf.Portal + "server/load.php?type=stb&action=handshake&prehash=0&token=" + conf.Token + "&JsHttpRequest=1-xml")
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -111,7 +129,7 @@ func authenticate() {
 		Js bool `json:"js"`
 	}
 	var tmpRes resStruct
-	resp, err = getRequest(conf.Portal + "server/load.php?type=stb&action=do_auth&login=" + conf.Username + "&password=" + conf.Password + "&device_id=" + conf.DeviceID + "&device_id2=" + conf.DeviceID2 + "&JsHttpRequest=1-xml")
+	resp, err = getRequestAPI(conf.Portal + "server/load.php?type=stb&action=do_auth&login=" + conf.Username + "&password=" + conf.Password + "&device_id=" + conf.DeviceID + "&device_id2=" + conf.DeviceID2 + "&JsHttpRequest=1-xml")
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -129,7 +147,7 @@ func authenticate() {
 }
 
 func watchdogUpdate() {
-	req, err := getRequest(conf.Portal + "server/load.php?action=get_events&event_active_id=0&init=0&type=watchdog&cur_play_type=1&JsHttpRequest=1-xml")
+	req, err := getRequestAPI(conf.Portal + "server/load.php?action=get_events&event_active_id=0&init=0&type=watchdog&cur_play_type=1&JsHttpRequest=1-xml")
 	if err != nil {
 		log.Println(err)
 	}
@@ -246,7 +264,7 @@ func generatePlaylist() {
 	// 	panic(err)
 	// }
 
-	req, err := getRequest(conf.Portal + "server/load.php?type=itv&action=get_all_channels&force_ch_link_check=&JsHttpRequest=1-xml")
+	req, err := getRequestAPI(conf.Portal + "server/load.php?type=itv&action=get_all_channels&force_ch_link_check=&JsHttpRequest=1-xml")
 	if err != nil {
 		panic(err)
 	}

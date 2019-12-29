@@ -117,7 +117,7 @@ func handleChannelRequest(w *http.ResponseWriter, r *http.Request, c *tvchannel,
 	}
 
 	// Retrieve data
-	resp, err := http.Get(u.String())
+	resp, err := getRequestIPTV(u.String())
 	if err != nil {
 		write500(w, err)
 		return
@@ -162,11 +162,6 @@ func handleChannelRequest(w *http.ResponseWriter, r *http.Request, c *tvchannel,
 		return
 	} else if contentType == "application/octet-stream" {
 		write500(w, "application/octet-stream is not supported yet")
-		// for k, v := range resp.Header {
-		// 	(*w).Header().Set(k, v[0])
-		// }
-		// (*w).WriteHeader(resp.StatusCode)
-		// io.Copy(*w, resp.Body)
 		return
 	} else if contentType == "application/vnd.apple.mpegurl" || contentType == "application/x-mpegurl" {
 		// If M3U/M3U8 content - rewrite links
@@ -199,7 +194,7 @@ func handleContentRequest(w *http.ResponseWriter, r *http.Request, c *tvchannel,
 	}
 
 	// Retrieve data
-	resp, err := http.Get(u.String())
+	resp, err := getRequestIPTV(u.String())
 	if err != nil {
 		write500(w, err)
 		return
@@ -241,11 +236,6 @@ func handleContentRequest(w *http.ResponseWriter, r *http.Request, c *tvchannel,
 		return
 	} else if contentType == "application/octet-stream" {
 		write500(w, "application/octet-stream is not supported yet")
-		// for k, v := range resp.Header {
-		// 	(*w).Header().Set(k, v[0])
-		// }
-		// (*w).WriteHeader(resp.StatusCode)
-		// io.Copy(*w, resp.Body)
 		return
 	} else if contentType == "application/vnd.apple.mpegurl" || contentType == "application/x-mpegurl" {
 		// If M3U/M3U8 content - rewrite links
