@@ -44,7 +44,6 @@ You will also need Go programming language installed:
 ```
 go run main.go
 ```
-Note that this will also stops your existing IPTV box from working. Reboot it so it connects and works again.
 
 ## 4. Use VLC
 
