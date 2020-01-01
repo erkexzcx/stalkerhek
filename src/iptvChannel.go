@@ -28,7 +28,7 @@ type tvchannel struct {
 func (c *tvchannel) LinkCacheValid() bool {
 	c.Mux.RLock()
 	defer c.Mux.RUnlock()
-	if c.LinkAccessTime.IsZero() || time.Since(c.LinkAccessTime).Seconds() > 3 || len(c.Cache) == 0 {
+	if c.LinkAccessTime.IsZero() || time.Since(c.LinkAccessTime).Seconds() > 2 || len(c.Cache) == 0 {
 		return false
 	}
 	return true
@@ -79,6 +79,7 @@ func (c *tvchannel) RefreshLink() {
 		c.LinkRoot = deleteAfterLastSlash(strs[1])
 		c.LinkAccessTime = time.Now()
 		c.SessionUpdateTime = time.Now()
+		c.Cache = []byte{} // Make it empty
 		c.Mux.Unlock()
 	} else {
 		log.Println("Failed to extract TV channel URL from Stalker API...")
