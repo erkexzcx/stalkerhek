@@ -22,7 +22,7 @@ func playlistHandler(w http.ResponseWriter, r *http.Request) {
 	// Write HTTP body
 	fmt.Fprintln(w, "#EXTM3U")
 	for _, title := range titles {
-		channelLink := "http://" + r.Host + "/iptv/" + url.PathEscape(title) + ".m3u8"
+		channelLink := "http://" + r.Host + "/iptv/" + url.PathEscape(title)
 		fmt.Fprintf(w, "#EXTINF:-1 tvg-logo=\"%s\" group-title=\"%s\", %s\n%s\n", (stalkerChannels[title]).Logo(), (stalkerChannels[title]).Genre(), title, channelLink)
 	}
 }

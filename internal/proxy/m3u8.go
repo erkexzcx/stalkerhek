@@ -28,7 +28,6 @@ func m3u8Handler(w http.ResponseWriter, r *http.Request) {
 	if len(reqPathParts) == 0 {
 		write500(&w, "Invalid request")
 	}
-	reqPathParts[0] = strings.TrimSuffix(reqPathParts[0], ".m3u8")
 
 	// Decode extracted tv channel name and find tv channel obj
 	unescapedTitle, err := url.PathUnescape(reqPathParts[0])
