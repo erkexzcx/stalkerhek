@@ -41,7 +41,7 @@ func (c *Config) StalkerPortal() *stalker.Portal {
 
 // LoadConfig provides pointer to configuration
 func LoadConfig() (*Config, error) {
-	content, err := ioutil.ReadFile("config.yaml")
+	content, err := ioutil.ReadFile("stalkerhek.yaml")
 	if err != nil {
 		return nil, err
 	}

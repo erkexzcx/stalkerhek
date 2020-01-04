@@ -4,11 +4,8 @@
 
 This software allows you to watch Stalker TV on VLC or Kodi and on multiple devices. It serves IPTV as M3U playlist and acts as a proxy.
 
-Things that do not work:
-* application/octet-stream is not working. VLC/Kodi is just not loading it...
-* Recordings that are served together with channels from stalker portal (from my stalker box)
-* Missing categories. Will add later
-* No EPG and not going to be any time soon
+Things that do NOT work:
+* Cache
 
 # How to use
 
@@ -34,15 +31,17 @@ All this info will be visible in the URLs or Cookies (wireshark will capture eve
 ## 2. Append extracted details to config file
 
 ```
-mv config.example.yaml config.yaml
-vim config.yaml
+cp config/stalkerhek.yaml stalkerhek.yaml
+vim stalkerhek.yaml
 ```
 
 ## 3. Start application
 
 You will also need Go programming language installed:
 ```
-go run main.go
+./build.sh
+cd dist
+./stalkerhek_linux_x86_64
 ```
 
 ## 4. Use VLC
