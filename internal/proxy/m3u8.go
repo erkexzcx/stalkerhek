@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"bufio"
+	"io"
 	"log"
 	"net/http"
 	"net/url"
@@ -117,20 +118,9 @@ func handleChannelRequest(w *http.ResponseWriter, r *http.Request, c *m3u8Channe
 	log.Println("Final url:", u.String(), resp.StatusCode, contentType)
 
 	if strings.HasPrefix(contentType, "video/") || strings.HasPrefix(contentType, "audio/") || contentType == "application/octet-stream" {
-		hj, ok := (*w).(http.Hijacker)
-		if !ok {
-			http.Error(*w, "webserver doesn't support hijacking", http.StatusInternalServerError)
-			return
-		}
-		conn, bufrw, err := hj.Hijack()
-		if err != nil {
-			http.Error(*w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		// Don't forget to close the connection:
-		defer conn.Close()
-		resp.Write(bufrw)
-		bufrw.Flush()
+		(*w).Header().Set("Content-Type", contentType)
+		(*w).WriteHeader(200)
+		io.Copy(*w, resp.Body)
 		return
 	} else if contentType == "application/vnd.apple.mpegurl" || contentType == "application/x-mpegurl" {
 		// If M3U/M3U8 content - rewrite links
@@ -181,20 +171,9 @@ func handleContentRequest(w *http.ResponseWriter, r *http.Request, c *m3u8Channe
 	log.Println("Final url:", u.String(), resp.StatusCode, contentType)
 
 	if strings.HasPrefix(contentType, "video/") || strings.HasPrefix(contentType, "audio/") || contentType == "application/octet-stream" {
-		hj, ok := (*w).(http.Hijacker)
-		if !ok {
-			http.Error(*w, "webserver doesn't support hijacking", http.StatusInternalServerError)
-			return
-		}
-		conn, bufrw, err := hj.Hijack()
-		if err != nil {
-			http.Error(*w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		// Don't forget to close the connection:
-		defer conn.Close()
-		resp.Write(bufrw)
-		bufrw.Flush()
+		(*w).Header().Set("Content-Type", contentType)
+		(*w).WriteHeader(200)
+		io.Copy(*w, resp.Body)
 		return
 	} else if contentType == "application/vnd.apple.mpegurl" || contentType == "application/x-mpegurl" {
 		// If M3U/M3U8 content - rewrite links
