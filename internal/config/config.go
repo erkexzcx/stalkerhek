@@ -11,6 +11,7 @@ import (
 
 // Config stores configuration from yaml file
 type Config struct {
+	Model        string `yaml:"model"`
 	SerialNumber string `yaml:"serial_number"`
 	DeviceID     string `yaml:"device_id"`
 	DeviceID2    string `yaml:"device_id2"`
@@ -26,6 +27,7 @@ type Config struct {
 // StalkerPortal provides configuration as Stalker portal
 func (c *Config) StalkerPortal() *stalker.Portal {
 	return &stalker.Portal{
+		Model:        c.Model,
 		SerialNumber: c.SerialNumber,
 		DeviceID:     c.DeviceID,
 		DeviceID2:    c.DeviceID2,
@@ -58,55 +60,17 @@ func LoadConfig() (*Config, error) {
 
 // Validate checks for errors in config file
 func (c *Config) Validate() error {
-	/* Some very basic checks... */
-	if strings.Replace(c.SerialNumber, " ", "", 1) != c.SerialNumber {
-		return errors.New("serial number cannot contain spaces")
+	if c.Model != "MAG250" && c.Model != "MAG254" {
+		return errors.New("only supported models are MAG250 and MAG254")
 	}
-	if c.SerialNumber == "" {
-		return errors.New("serial number cannot be empty")
-	}
-
-	if strings.Replace(c.DeviceID, " ", "", 1) != c.DeviceID {
-		return errors.New("device ID cannot contain spaces")
-	}
-	if c.DeviceID == "" {
-		return errors.New("device ID cannot be empty")
-	}
-
-	if strings.Replace(c.DeviceID2, " ", "", 1) != c.DeviceID2 {
-		return errors.New("device ID2 cannot contain spaces")
-	}
-	if c.DeviceID2 == "" {
-		return errors.New("device ID2 cannot be empty")
-	}
-
-	if strings.Replace(c.Signature, " ", "", 1) != c.Signature {
-		return errors.New("signature cannot contain spaces")
-	}
-	if c.Signature == "" {
-		return errors.New("signature cannot be empty")
-	}
-
 	if strings.Replace(c.MAC, " ", "", 1) != c.MAC {
 		return errors.New("MAC cannot contain spaces")
 	}
 	if c.MAC == "" {
 		return errors.New("MAC cannot be empty")
 	}
-
-	if strings.Replace(c.Username, " ", "", 1) != c.Username {
-		return errors.New("username cannot contain spaces")
-	}
-	if c.Username == "" {
-		return errors.New("username cannot be empty")
-	}
-
-	if c.Password == "" {
-		return errors.New("password cannot be empty")
-	}
-
-	if !strings.HasSuffix(c.Location, "/stalker_portal/") {
-		return errors.New("invalid Stalker portal location: it must end with '/stalker_portal/'")
+	if !strings.HasSuffix(c.Location, ".php") {
+		return errors.New("invalid Stalker portal location: it must end with '.php'")
 	}
 
 	if strings.Replace(c.TimeZone, " ", "", 1) != c.TimeZone {

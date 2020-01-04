@@ -11,6 +11,7 @@ import (
 
 // Portal stores details about stalker portal
 type Portal struct {
+	Model        string
 	SerialNumber string
 	DeviceID     string
 	DeviceID2    string
@@ -34,9 +35,11 @@ func (p *Portal) Start() error {
 		return err
 	}
 
-	// Authorize token (associate with credentials)
-	if err := p.authenticate(); err != nil {
-		return err
+	if p.Username != "" && p.Password != "" {
+		// Authorize token (associate with credentials)
+		if err := p.authenticate(); err != nil {
+			return err
+		}
 	}
 
 	// Run watchdog function once to check for errors:
@@ -64,9 +67,15 @@ func (p *Portal) httpRequest(link string) ([]byte, error) {
 	}
 
 	req.Header.Set("User-Agent", "Mozilla/5.0 (QtEmbedded; U; Linux; C) AppleWebKit/533.3 (KHTML, like Gecko) MAG200 stbapp ver: 4 rev: 2116 Mobile Safari/533.3")
-	req.Header.Set("X-User-Agent", "Model: MAG254; Link: Ethernet")
+	req.Header.Set("X-User-Agent", "Model: "+p.Model+"; Link: Ethernet")
 	req.Header.Set("Authorization", "Bearer "+p.Token)
-	req.Header.Set("Cookie", "PHPSESSID=null; sn="+url.PathEscape(p.SerialNumber)+"; mac="+url.PathEscape(p.MAC)+"; stb_lang=en; timezone="+url.PathEscape(p.TimeZone))
+
+	cookieText := "PHPSESSID=null; mac=" + url.QueryEscape(p.MAC) + "; stb_lang=en; timezone=" + url.QueryEscape(p.TimeZone) + ";"
+	if p.SerialNumber != "" {
+		cookieText += " sn=" + url.QueryEscape(p.SerialNumber) + ";"
+	}
+
+	req.Header.Set("Cookie", cookieText)
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
@@ -88,7 +97,7 @@ func (p *Portal) httpRequest(link string) ([]byte, error) {
 
 // WatchdogUpdate performs watchdog update request.
 func (p *Portal) watchdogUpdate() error {
-	_, err := p.httpRequest(p.Location + "server/load.php?action=get_events&event_active_id=0&init=0&type=watchdog&cur_play_type=1&JsHttpRequest=1-xml")
+	_, err := p.httpRequest(p.Location + "?action=get_events&event_active_id=0&init=0&type=watchdog&cur_play_type=1&JsHttpRequest=1-xml")
 	if err != nil {
 		return err
 	}

@@ -3,6 +3,7 @@ package stalker
 import (
 	"encoding/json"
 	"errors"
+	"io/ioutil"
 	"log"
 	"net/url"
 	"strings"
@@ -29,7 +30,7 @@ func (c *Channel) NewLink() (string, error) {
 	}
 	var tmp tmpStruct
 
-	link := c.portal.Location + "server/load.php?action=create_link&type=itv&cmd=" + url.PathEscape(c.cmd) + "&JsHttpRequest=1-xml"
+	link := c.portal.Location + "?action=create_link&type=itv&cmd=" + url.PathEscape(c.cmd) + "&JsHttpRequest=1-xml"
 	content, err := c.portal.httpRequest(link)
 	if err != nil {
 		return "", err
@@ -77,11 +78,11 @@ func (p *Portal) RetrieveChannels() (map[string]*Channel, error) {
 	}
 	var tmp tmpStruct
 
-	content, err := p.httpRequest(p.Location + "server/load.php?type=itv&action=get_all_channels&force_ch_link_check=&JsHttpRequest=1-xml")
+	content, err := p.httpRequest(p.Location + "?type=itv&action=get_all_channels&force_ch_link_check=&JsHttpRequest=1-xml")
 	if err != nil {
 		return nil, err
 	}
-	//ioutil.WriteFile("/tmp/stalkerchannels.json", content, 0644)
+	ioutil.WriteFile("/tmp/stalkerchannels.json", content, 0644)
 
 	if err := json.Unmarshal(content, &tmp); err != nil {
 		log.Println(string(content))
@@ -117,11 +118,11 @@ func (p *Portal) getGenres() (map[string]string, error) {
 	}
 	var tmp tmpStruct
 
-	content, err := p.httpRequest(p.Location + "server/load.php?action=get_genres&type=itv&JsHttpRequest=1-xml")
+	content, err := p.httpRequest(p.Location + "?action=get_genres&type=itv&JsHttpRequest=1-xml")
 	if err != nil {
 		return nil, err
 	}
-	//ioutil.WriteFile("/tmp/stalkergenres.json", content2, 0644)
+	ioutil.WriteFile("/tmp/stalkergenres.json", content, 0644)
 
 	if err := json.Unmarshal(content, &tmp); err != nil {
 		log.Println(string(content))
