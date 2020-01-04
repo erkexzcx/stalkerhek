@@ -16,6 +16,7 @@ This app is incomplete, contains bugs and "it works for me", so you have been wa
 To extract all the authentication details, use wireshark to capture HTTP requests and analyse them by hand. I used **capture** filter `port 80 and tcp[((tcp[12:1] & 0xf0) >> 2):4] = 0x47455420` and **display** filter `http.request.method == GET`. You will likely want to use MITM attack using [arpspoof](https://www.irongeek.com/i.php?page=security/arpspoof). You will also need to restart TV box when capturing requests to see your TV box logging into stalker portal with stored authentication details.
 
 You will need the following details extracted from the wireshark logs:
+* model
 * sn
 * device_id
 * device_id2
@@ -24,7 +25,9 @@ You will need the following details extracted from the wireshark logs:
 * login
 * password
 * timezone
-* address of the stalker middleware server. If your tv box connets to `http://domain.example.com/stalker_portal/c/...` then it's going to be `http://domain.example.com/stalker_portal/`.
+* location (URL address).
+
+Regarding URL address/location: If your tv box connets to `http://domain.example.com/stalker_portal/server/load.php?...` then it's going to be `http://domain.example.com/stalker_portal/server/load.php`. If it connects to `http://domain.example.com/portal.php?...`, then it's going to be `http://domain.example.com/portal.php`. Wireshark will tell you where it connects. :)
 
 All this info will be visible in the URLs or Cookies (wireshark will capture everything).
 
