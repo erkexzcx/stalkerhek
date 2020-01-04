@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"log"
 	"net/http"
-	"net/http/httputil"
 	"net/url"
 	"regexp"
 	"strings"
@@ -118,13 +117,20 @@ func handleChannelRequest(w *http.ResponseWriter, r *http.Request, c *m3u8Channe
 	log.Println("Final url:", u.String(), resp.StatusCode, contentType)
 
 	if strings.HasPrefix(contentType, "video/") || strings.HasPrefix(contentType, "audio/") || contentType == "application/octet-stream" {
-		r.URL.Path = u.Path
-		u.Path = ""
-		proxy := httputil.NewSingleHostReverseProxy(u)
-		r.URL.Host = u.Host
-		r.URL.Scheme = u.Scheme
-		r.Host = u.Host
-		proxy.ServeHTTP(*w, r)
+		hj, ok := (*w).(http.Hijacker)
+		if !ok {
+			http.Error(*w, "webserver doesn't support hijacking", http.StatusInternalServerError)
+			return
+		}
+		conn, bufrw, err := hj.Hijack()
+		if err != nil {
+			http.Error(*w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		// Don't forget to close the connection:
+		defer conn.Close()
+		resp.Write(bufrw)
+		bufrw.Flush()
 		return
 	} else if contentType == "application/vnd.apple.mpegurl" || contentType == "application/x-mpegurl" {
 		// If M3U/M3U8 content - rewrite links
@@ -175,13 +181,20 @@ func handleContentRequest(w *http.ResponseWriter, r *http.Request, c *m3u8Channe
 	log.Println("Final url:", u.String(), resp.StatusCode, contentType)
 
 	if strings.HasPrefix(contentType, "video/") || strings.HasPrefix(contentType, "audio/") || contentType == "application/octet-stream" {
-		r.URL.Path = u.Path
-		u.Path = ""
-		proxy := httputil.NewSingleHostReverseProxy(u)
-		r.URL.Host = u.Host
-		r.URL.Scheme = u.Scheme
-		r.Host = u.Host
-		proxy.ServeHTTP(*w, r)
+		hj, ok := (*w).(http.Hijacker)
+		if !ok {
+			http.Error(*w, "webserver doesn't support hijacking", http.StatusInternalServerError)
+			return
+		}
+		conn, bufrw, err := hj.Hijack()
+		if err != nil {
+			http.Error(*w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		// Don't forget to close the connection:
+		defer conn.Close()
+		resp.Write(bufrw)
+		bufrw.Flush()
 		return
 	} else if contentType == "application/vnd.apple.mpegurl" || contentType == "application/x-mpegurl" {
 		// If M3U/M3U8 content - rewrite links
