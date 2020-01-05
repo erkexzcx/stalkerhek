@@ -16,15 +16,13 @@ func Start(chs map[string]*stalker.Channel) {
 	// Initialize channel lists
 	channels = make(map[string]*Channel, len(chs))
 	m3u8channels = make(map[string]*M3U8Channel, len(chs))
-	streams = make(map[string]*Stream, len(chs))
+	//streams = make(map[string]*Stream, len(chs))
 	for k, v := range chs {
 		channels[k] = &Channel{Stalker: v}
-		m3u8channels[k] = &M3U8Channel{Stalker: v}
-		streams[k] = &Stream{stream: nil}
 	}
 
 	// Initiate cache
-	m3u8TSCache = cache.New(20*time.Second, 5*time.Second)
+	m3u8TSCache = cache.New(20*time.Second, 5*time.Second) // Store cache for 20seconds and clear every 5 seconds
 
 	// Start web server and listen for connections
 	http.HandleFunc("/iptv", playlistHandler)

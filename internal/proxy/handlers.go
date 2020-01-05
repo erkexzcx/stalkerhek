@@ -93,9 +93,75 @@ func channelHandler(w http.ResponseWriter, r *http.Request) {
 	case channelTypeUnknown:
 		unknownChannelHandle(w, r, c, unescapedTitle)
 	case channelTypeStream:
-		// TODO - leave for later
+		// s := streams[unescapedTitle]
+		// s.mux.Lock()
+
+		// // Check if stream already exists
+		// if s.stream == nil {
+		// 	link, err := c.Stalker.NewLink()
+		// 	if err != nil {
+		// 		write500(w, err)
+		// 		return
+		// 	}
+		// 	resp, err := http.Get(link)
+		// 	if err != nil {
+		// 		write500(w, err)
+		// 		return
+		// 	}
+		// 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		// 		write500(w, errors.New("site says: "+resp.Status))
+		// 		return
+		// 	}
+		// 	s.stream = resp.Body // do not close it
+		// }
+
+		// pipeReader, pipeWriter := io.Pipe()
+		// s.AddWriter(pipeWriter)
+
+		// w.Header().Set("Content-Type", "application/octet-stream")
+		// w.WriteHeader(200)
+		// defer pipeReader.Close()
+		// io.Copy(w, pipeReader)
+		// --------------------------------
+		link, err := c.Stalker.NewLink()
+		if err != nil {
+			write500(w, err)
+			return
+		}
+		resp, err := http.Get(link)
+		if err != nil {
+			write500(w, err)
+			return
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+			write500(w, errors.New("site says: "+resp.Status))
+			return
+		}
+		w.Header().Set("Content-Type", resp.Header.Get("Content-Type"))
+		w.WriteHeader(200)
+		defer resp.Body.Close()
+		io.Copy(w, resp.Body)
 	case channelTypeMedia:
-		// TODO - leave for later
+		link, err := c.Stalker.NewLink()
+		if err != nil {
+			write500(w, err)
+			return
+		}
+		resp, err := http.Get(link)
+		if err != nil {
+			write500(w, err)
+			return
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+			write500(w, errors.New("site says: "+resp.Status))
+			return
+		}
+		w.Header().Set("Content-Type", resp.Header.Get("Content-Type"))
+		w.WriteHeader(200)
+		defer resp.Body.Close()
+		io.Copy(w, resp.Body)
 	case channelTypeM3U8:
 		m3u8c := m3u8channels[unescapedTitle]
 
@@ -272,11 +338,13 @@ func unknownChannelHandle(w http.ResponseWriter, r *http.Request, c *Channel, t 
 
 	// This function can only be reached when user requests channel without additional path
 
-	defer resp.Body.Close() // TODO - this probably won't be needed here. Move to required place
-
 	switch chType {
 	case channelTypeM3U8:
-		m3u8c := m3u8channels[t]
+		defer resp.Body.Close()
+
+		m3u8c := &M3U8Channel{Stalker: c.Stalker}
+		m3u8channels[t] = m3u8c
+
 		m3u8c.link = resp.Request.URL.String()
 		m3u8c.linkRoot = deleteAfterLastSlash(m3u8c.link)
 		m3u8c.sessionUpdated = time.Now()
@@ -291,11 +359,28 @@ func unknownChannelHandle(w http.ResponseWriter, r *http.Request, c *Channel, t 
 
 		m3u8c.linkCache = content
 		m3u8c.linkCacheCreated = time.Now()
-	case channelTypeStream, channelTypeMedia:
+	case channelTypeStream:
+		// s := &Stream{stream: nil}
+		// streams[t] = s
+		// s.stream = resp.Body
+
+		// pipeReader, pipeWriter := io.Pipe()
+		// s.AddWriter(pipeWriter)
+
+		// w.Header().Set("Content-Type", contentType)
+		// w.WriteHeader(200)
+
+		// s.Start() // Starts pooler/buffer reader that writes to given writers
+		// io.Copy(w, pipeReader)
+		// --------------------------------
 		w.Header().Set("Content-Type", contentType)
 		w.WriteHeader(200)
+		defer resp.Body.Close()
 		io.Copy(w, resp.Body)
-		// TODO - store resp.Body in streams variable and somehow reuse
+	case channelTypeMedia:
+		// Nothing really to do for media type - just copy/paste
+		defer resp.Body.Close()
+		io.Copy(w, resp.Body)
 	}
 }
 
@@ -307,8 +392,7 @@ func getChannelType(contentType string) (channelType int, err error) {
 	case strings.HasPrefix(contentType, "video/") || strings.HasPrefix(contentType, "audio/"):
 		return channelTypeMedia, nil
 	case contentType == "application/octet-stream":
-		//return channelTypeStream, nil // TODO - leave for later
-		return -1, errors.New("unrecognized Content-Type '" + contentType + "'")
+		return channelTypeStream, nil
 	default:
 		return -1, errors.New("unrecognized Content-Type '" + contentType + "'")
 	}
