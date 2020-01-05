@@ -3,27 +3,34 @@ package proxy
 import (
 	"log"
 	"net/http"
-	"strings"
+	"time"
 
 	"github.com/erkexzcx/stalkerhek/pkg/stalker"
+	"github.com/patrickmn/go-cache"
 )
 
 var stalkerChannels map[string]*stalker.Channel
 
-var channels map[string]*m3u8Channel
-
 // Start starts listening for requests. Eventually it starts a proxy server.
 func Start(chs map[string]*stalker.Channel) {
-	stalkerChannels = chs
-	channels = make(map[string]*m3u8Channel, len(chs))
+	// Initialize channel lists
+	channels = make(map[string]*Channel, len(chs))
+	m3u8channels = make(map[string]*M3U8Channel, len(chs))
+	streams = make(map[string]*Stream, len(chs))
+	for k, v := range chs {
+		channels[k] = &Channel{Stalker: v}
+		m3u8channels[k] = &M3U8Channel{Stalker: v}
+		streams[k] = &Stream{stream: nil}
+	}
 
+	// Initiate cache
+	m3u8TSCache = cache.New(20*time.Second, 5*time.Second)
+
+	// Start web server and listen for connections
 	http.HandleFunc("/iptv", playlistHandler)
-	http.HandleFunc("/iptv/", m3u8Handler)
+	http.HandleFunc("/iptv/", channelHandler)
 
 	log.Println("Started!")
-	log.Fatal(http.ListenAndServe(":8987", nil))
-}
 
-func deleteAfterLastSlash(str string) string {
-	return str[0 : strings.LastIndex(str, "/")+1]
+	log.Fatal(http.ListenAndServe(":8987", nil))
 }
