@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"bufio"
+	"fmt"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -186,6 +187,8 @@ func rewriteLinks(prefix string, linkRoot string, scanner *bufio.Scanner) string
 		}
 		sb.WriteString(line)
 		sb.WriteByte('\n')
+
+		fmt.Println(line)
 	}
 
 	return sb.String()

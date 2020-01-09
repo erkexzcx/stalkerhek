@@ -2,11 +2,12 @@ package proxy
 
 import (
 	"log"
-	"net/http"
+	"strings"
 	"time"
 
 	"github.com/erkexzcx/stalkerhek/pkg/stalker"
 	"github.com/patrickmn/go-cache"
+	"github.com/valyala/fasthttp"
 )
 
 var stalkerChannels map[string]*stalker.Channel
@@ -24,11 +25,18 @@ func Start(chs map[string]*stalker.Channel) {
 	// Initiate cache
 	m3u8TSCache = cache.New(20*time.Second, 5*time.Second) // Store cache for 20seconds and clear every 5 seconds
 
-	// Start web server and listen for connections
-	http.HandleFunc("/iptv", playlistHandler)
-	http.HandleFunc("/iptv/", channelHandler)
-
 	log.Println("Started!")
 
-	log.Fatal(http.ListenAndServe(":8987", nil))
+	// the corresponding fasthttp code
+	m := func(ctx *fasthttp.RequestCtx) {
+		path := string(ctx.Path())
+		if strings.HasPrefix(path, "/iptv/") {
+			channelHandler(ctx)
+		} else if strings.HasPrefix(path, "/iptv") {
+			playlistHandler(ctx)
+		} else {
+			ctx.Error("not found", fasthttp.StatusNotFound)
+		}
+	}
+	fasthttp.ListenAndServe(":8987", m)
 }
