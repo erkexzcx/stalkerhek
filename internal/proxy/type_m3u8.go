@@ -125,7 +125,7 @@ func (c *M3U8Channel) SessionValid() bool {
 // LinkCacheValid ...
 func (c *M3U8Channel) LinkCacheValid() bool {
 	s := c.LinkCacheCreated()
-	if time.Since(s).Seconds() > 2 || s.IsZero() {
+	if time.Since(s).Seconds() > 1 || s.IsZero() {
 		return false
 	}
 	return true
