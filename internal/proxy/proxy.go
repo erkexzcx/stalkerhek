@@ -23,17 +23,17 @@ func Start(chs map[string]*stalker.Channel) {
 	}
 
 	// Initiate cache
-	m3u8TSCache = cache.New(20*time.Second, 5*time.Second) // Store cache for 20seconds and clear every 5 seconds
+	m3u8TSCache = cache.New(time.Minute, 10*time.Second) // Store cache for 1 minute and clear every 10 seconds
 
 	log.Println("Started!")
 
 	// the corresponding fasthttp code
 	m := func(ctx *fasthttp.RequestCtx) {
 		path := string(ctx.Path())
-		if strings.HasPrefix(path, "/iptv/") {
-			channelHandler(ctx)
-		} else if strings.HasPrefix(path, "/iptv") {
+		if path == "/iptv" {
 			playlistHandler(ctx)
+		} else if strings.HasPrefix(path, "/iptv/") {
+			channelHandler(ctx)
 		} else {
 			ctx.Error("not found", fasthttp.StatusNotFound)
 		}

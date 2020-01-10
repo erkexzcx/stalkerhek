@@ -2,7 +2,6 @@ package proxy
 
 import (
 	"bufio"
-	"fmt"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -156,25 +155,36 @@ func deleteAfterLastSlash(str string) string {
 
 var reURILinkExtract = regexp.MustCompile(`URI="([^"]*)"`)
 
-func rewriteLinks(prefix string, linkRoot string, scanner *bufio.Scanner) string {
+func rewriteLinks(prefix string, localPrefix string, linkRoot string, scanner *bufio.Scanner) string {
 	var sb strings.Builder
 
 	linkRootURL, _ := url.Parse(linkRoot) // It will act as a base URL for full URLs
 
 	modifyLink := func(link string) string {
+		var l string
+
 		switch {
 		case strings.HasPrefix(link, "//"):
 			tmpURL, _ := url.Parse(link)
 			tmp2URL, _ := url.Parse(tmpURL.RequestURI())
 			link = (linkRootURL.ResolveReference(tmp2URL)).String()
-			return prefix + strings.ReplaceAll(link, linkRoot, "")
+			l = strings.ReplaceAll(link, linkRoot, "")
 		case strings.HasPrefix(link, "/"):
 			tmp2URL, _ := url.Parse(link)
 			link = (linkRootURL.ResolveReference(tmp2URL)).String()
-			return prefix + strings.ReplaceAll(link, linkRoot, "")
+			l = strings.ReplaceAll(link, linkRoot, "")
 		default:
-			return prefix + link
+			l = link
 		}
+
+		// Preload contents into a cache
+		go func() {
+			if resp, err := m3u8HTTPClient.Get(localPrefix + l); err == nil {
+				resp.Body.Close()
+			}
+		}()
+
+		return prefix + l
 	}
 
 	for scanner.Scan() {
@@ -187,8 +197,6 @@ func rewriteLinks(prefix string, linkRoot string, scanner *bufio.Scanner) string
 		}
 		sb.WriteString(line)
 		sb.WriteByte('\n')
-
-		fmt.Println(line)
 	}
 
 	return sb.String()

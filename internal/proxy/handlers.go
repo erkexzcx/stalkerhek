@@ -234,8 +234,9 @@ func m3u8ChannelHandle(ctx *fasthttp.RequestCtx, c *M3U8Channel, title string, u
 
 	linkRoot := c.LinkRoot()
 	prefix := "http://" + string(ctx.Host()) + "/iptv/" + title + "/"
+	localPrefix := "http://127.0.0.1/iptv/" + title + "/"
 	scanner := bufio.NewScanner(resp.Body)
-	content := []byte(rewriteLinks(prefix, linkRoot, scanner))
+	content := []byte(rewriteLinks(prefix, localPrefix, linkRoot, scanner))
 
 	// Cache mux is already locked
 	c.SetLinkCache(content)
@@ -280,8 +281,9 @@ func m3u8ChannelPathHandle(ctx *fasthttp.RequestCtx, c *M3U8Channel, title strin
 
 		linkRoot := c.LinkRoot()
 		prefix := "http://" + string(ctx.Host()) + "/iptv/" + title + "/"
+		localPrefix := "http://127.0.0.1/iptv/" + title + "/"
 		scanner := bufio.NewScanner(resp.Body)
-		content := []byte(rewriteLinks(prefix, linkRoot, scanner))
+		content := []byte(rewriteLinks(prefix, localPrefix, linkRoot, scanner))
 
 		ctx.SetContentType(contentType)
 		ctx.SetStatusCode(resp.StatusCode)
@@ -347,8 +349,9 @@ func unknownChannelHandle(ctx *fasthttp.RequestCtx, c *Channel, t string) {
 		m3u8c.sessionUpdated = time.Now()
 
 		prefix := "http://" + string(ctx.Host()) + "/iptv/" + url.QueryEscape(t) + "/" // We got plain channel titiel, so need to query escape it
+		localPrefix := "http://127.0.0.1/iptv/" + url.QueryEscape(t) + "/"
 		scanner := bufio.NewScanner(resp.Body)
-		content := []byte(rewriteLinks(prefix, m3u8c.linkRoot, scanner))
+		content := []byte(rewriteLinks(prefix, localPrefix, m3u8c.linkRoot, scanner))
 
 		ctx.SetContentType(contentType)
 		ctx.SetStatusCode(200)
