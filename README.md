@@ -8,6 +8,12 @@ What does not work (yet):
 * restreaming `application/octet-stream` streams. 2 devices will create 2 streams, not 1.
 * Stalker portal connection is somewhat barelly working, but it works in my case.
 
+# Advantages:
+
+Here are some advatages:
+* Play on VLC rather than using emulator or STB boxes.
+* This app is the only way to play Stalker IPTV on jailbroken PS3, Movian player.
+
 # How to use
 
 This app is incomplete, contains bugs and "it works for me", so you have been warned.
