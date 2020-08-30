@@ -11,7 +11,7 @@ import (
 	"github.com/erkexzcx/stalkerhek/pkg/stalker"
 )
 
-var flagBind = flag.String("bind", "0.0.0.0:8989", "bind IP and port")
+var flagBind = flag.String("bind", "0.0.0.0:8987", "bind IP and port")
 var flagConfig = flag.String("config", "stalkerhek.yml", "path to the config file")
 
 func main() {
