@@ -9,8 +9,7 @@ import (
 	"strings"
 )
 
-// Channel stores information about channel in Stalker portal. This is not
-// a real TV channel, but details on how to retrieve a working channel's URL.
+// Channel stores information about channel in Stalker portal. This is not a real TV channel representation, but details on how to retrieve a working channel's URL.
 type Channel struct {
 	cmd     string             // channel's identifier in Stalker portal
 	logo    string             // Full URL to logo in Stalker portal
@@ -19,9 +18,7 @@ type Channel struct {
 	genres  *map[string]string // Stores mappings for genre ID -> genre title
 }
 
-// NewLink retrieves a link to the working channel. Retrieved link can
-// be played in VLC or Kodi, but expires very soon if not being constantly
-// opened (used).
+// NewLink retrieves a link to the working channel. Retrieved link can be played in VLC or Kodi, but expires very soon if not being constantly opened (used).
 func (c *Channel) NewLink() (string, error) {
 	type tmpStruct struct {
 		Js struct {
@@ -37,7 +34,7 @@ func (c *Channel) NewLink() (string, error) {
 	}
 
 	if err := json.Unmarshal(content, &tmp); err != nil {
-		panic(err)
+		return "", err
 	}
 
 	strs := strings.Split(tmp.Js.Cmd, " ")
@@ -52,7 +49,7 @@ func (c *Channel) Logo() string {
 	if c.logo == "" {
 		return ""
 	}
-	return c.portal.Location + "misc/logos/320/" + c.logo
+	return c.portal.Location + "misc/logos/320/" + c.logo // hardcoded path - fixme?
 }
 
 // Genre returns a genre title
@@ -122,11 +119,9 @@ func (p *Portal) getGenres() (map[string]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	ioutil.WriteFile("/tmp/stalkergenres.json", content, 0644)
 
 	if err := json.Unmarshal(content, &tmp); err != nil {
-		log.Println(string(content))
-		panic(err)
+		log.Fatalln(string(content))
 	}
 
 	genres := make(map[string]string, len(tmp.Js))

@@ -35,7 +35,7 @@ func (p *Portal) Start() error {
 		return err
 	}
 
-	if p.Username != "" && p.Password != "" {
+	if p.Username != "" {
 		// Authorize token (associate with credentials)
 		if err := p.authenticate(); err != nil {
 			return err

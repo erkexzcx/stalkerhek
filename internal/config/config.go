@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"strings"
 
-	"github.com/erkexzcx/stalkerhek/pkg/stalker"
 	"gopkg.in/yaml.v2"
 )
 
@@ -24,38 +23,23 @@ type Config struct {
 	Token        string `yaml:"token"`
 }
 
-// StalkerPortal provides configuration as Stalker portal
-func (c *Config) StalkerPortal() *stalker.Portal {
-	return &stalker.Portal{
-		Model:        c.Model,
-		SerialNumber: c.SerialNumber,
-		DeviceID:     c.DeviceID,
-		DeviceID2:    c.DeviceID2,
-		Signature:    c.Signature,
-		MAC:          c.MAC,
-		Username:     c.Username,
-		Password:     c.Password,
-		Location:     c.Location,
-		TimeZone:     c.TimeZone,
-		Token:        c.Token,
-	}
-}
-
-// LoadConfig provides pointer to configuration
-func LoadConfig() (*Config, error) {
-	content, err := ioutil.ReadFile("stalkerhek.yaml")
+// Load returns configuration object.
+func Load(path *string) (*Config, error) {
+	content, err := ioutil.ReadFile(*path)
 	if err != nil {
 		return nil, err
 	}
 
-	var c Config
-
+	var c *Config
 	err = yaml.Unmarshal(content, &c)
 	if err != nil {
 		return nil, err
 	}
 
-	return &c, nil
+	if err = c.Validate(); err != nil {
+		return nil, err
+	}
+	return c, nil
 }
 
 // Validate checks for errors in config file

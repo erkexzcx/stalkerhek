@@ -8,8 +8,7 @@ import (
 	"net/http"
 )
 
-// handshake reserves a offered token in Portal. If offered token is not available -
-// new one will be issued by stalker portal, reservedMAG254 and Stalker's config will be updated.
+// Handshake reserves a offered token in Portal. If offered token is not available - new one will be issued by stalker portal, reservedMAG254 and Stalker's config will be updated.
 func (p *Portal) handshake() error {
 	// This HTTP request has different headers from the rest of HTTP requests, so perform it manually
 	type tmpStruct struct {
@@ -52,7 +51,7 @@ func (p *Portal) handshake() error {
 	return nil
 }
 
-// authenticate associates credentials with token. In other words - logs you in
+// Authenticate associates credentials with token. In other words - logs you in
 func (p *Portal) authenticate() (err error) {
 	// This HTTP request has different headers from the rest of HTTP requests, so perform it manually
 	type tmpStruct struct {
