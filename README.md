@@ -4,10 +4,6 @@
 
 This software allows you to watch Stalker TV on VLC or Kodi and on multiple devices. It serves IPTV as M3U playlist and acts as a proxy.
 
-What does not work (yet):
-* restreaming `application/octet-stream` streams. 2 devices will create 2 streams, not 1.
-* Stalker portal connection is somewhat barelly working, but it works in my case.
-
 # Advantages:
 
 Here are some advatages:
@@ -16,7 +12,7 @@ Here are some advatages:
 
 # How to use
 
-This app is incomplete, contains bugs and "it works for me", so you have been warned.
+This app might contain bugs and "it works for me", so you have been warned.
 
 ## 1. Extract stalker credentials (and other required stuff)
 
@@ -41,8 +37,8 @@ All this info will be visible in the URLs or Cookies (wireshark will capture eve
 ## 2. Append extracted details to config file
 
 ```
-cp config/stalkerhek.yaml stalkerhek.yaml
-vim stalkerhek.yaml
+cp config/stalkerhek.yaml stalkerhek.yml
+vim stalkerhek.yml
 ```
 
 ## 3. Start application
@@ -52,11 +48,12 @@ You will also need Go programming language installed:
 ./build.sh
 cd dist
 ./stalkerhek_linux_x86_64
+# ./stalkerhek_linux_x86_64 -config ../stalkerhek.yml -bind 0.0.0.0:9999
 ```
 
 ## 4. Use VLC
 
-Use VLC, Kodi or test if link is working in browser:
+Use VLC, Kodi or test if link is working in browser or shell (using curl):
 ```
 vlc http://<ipaddr>:/8987/iptv
 ```
