@@ -1,6 +1,9 @@
 package proxy
 
-import "net/http"
+import (
+	"log"
+	"net/http"
+)
 
 func channelHandler(w http.ResponseWriter, r *http.Request) {
 	cr, err := getContentRequest(w, r, "/iptv/")
@@ -18,7 +21,9 @@ func channelHandler(w http.ResponseWriter, r *http.Request) {
 
 func contentRequestHandler(w http.ResponseWriter, r *http.Request, cr *ContentRequest) {
 	if !cr.validSession() {
-		cr.updateChannel()
+		if err := cr.updateChannel(); err != nil {
+			log.Println("Failed to update channel:", err)
+		}
 	}
 
 	switch cr.Channel.LinkType {
