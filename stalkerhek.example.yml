@@ -1,0 +1,11 @@
+model: MAG254
+serial_number: 0000000000000
+device_id: ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+device_id2: ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+signature: ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+mac: 00:00:00:00:00:00
+username: myusername # leave empty ir delete this line if none
+password: mypassword # leave empty ir delete this line if none
+portal_url: http://domain.example.com/stalker_portal
+time_zone: Europe/Vilnius
+token: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
