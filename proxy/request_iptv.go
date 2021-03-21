@@ -3,6 +3,7 @@ package proxy
 import (
 	"log"
 	"net/http"
+	"time"
 )
 
 func channelHandler(w http.ResponseWriter, r *http.Request) {
@@ -16,11 +17,9 @@ func channelHandler(w http.ResponseWriter, r *http.Request) {
 	cr.Channel.Mux.Lock()
 	defer cr.Channel.Mux.Unlock()
 
-	contentRequestHandler(w, r, cr)
-}
-
-func contentRequestHandler(w http.ResponseWriter, r *http.Request, cr *ContentRequest) {
-	if !cr.validSession() {
+	if cr.validSession() {
+		cr.Channel.sessionUpdated = time.Now()
+	} else {
 		if err := cr.updateChannel(); err != nil {
 			log.Println("Failed to update channel:", err)
 		}

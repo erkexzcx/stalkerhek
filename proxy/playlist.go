@@ -23,8 +23,7 @@ type Channel struct {
 	LinkType    int          // Default is 0 (unknown)
 	LinkM3u8Ref *M3U8Channel // Reference. For non M3U8 channels it will be empty
 
-	sessionUpdated    time.Time
-	sessionUpdatedMux sync.RWMutex
+	sessionUpdated time.Time
 
 	LogoCache            []byte
 	LogoCacheContentType string

@@ -23,9 +23,6 @@ func Start(chs map[string]*stalker.Channel, flagBind *string) {
 		}
 	}
 
-	// Some global vars
-	m3u8channels = make(map[string]*M3U8Channel, len(chs))
-
 	http.HandleFunc("/iptv", playlistHandler)
 	http.HandleFunc("/iptv/", channelHandler)
 	http.HandleFunc("/logo/", logoHandler)
