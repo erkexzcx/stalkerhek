@@ -42,21 +42,24 @@ cp stalkerhek.example.yml stalkerhek.yml
 vim stalkerhek.yml
 ```
 
-## 3. Start application
+## 3. Build & start application
 
 You will also need Go programming language installed:
 ```
-./build.sh
-cd dist
-./stalkerhek_linux_x86_64
-# ./stalkerhek_linux_x86_64 -config ../stalkerhek.yml -bind 0.0.0.0:9999
+go build -ldflags="-s -w" -o "stalkerhek" ./cmd/stalkerhek/main.go
+./stalkerhek -help
+# ./stalkerhek -config stalkerhek.yml -bind 0.0.0.0:9999
 ```
 
-Tip: By default it uses port `8987` but using above command you can change to `9999`.
+P.S. If you are getting error - try starting again.
 
-## 4. Use VLC
+## 4. Use application
 
-Use VLC, Kodi or test if link is working in browser or shell (using curl):
+I suggest first testing with CURL:
 ```
-vlc http://<ipaddr>:/8987/iptv
+curl http://<ipaddr>:/8987/iptv
 ```
+
+You might see that there are no channels - in such case simply restart this application and try again.
+
+If there are channels loaded, use above URL in VLC/Kodi. :)

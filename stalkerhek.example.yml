@@ -1,4 +1,4 @@
-model: MAG254
+model: MAG254 # Do not change this, this does pretty much nothing
 serial_number: 0000000000000
 device_id: ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
 device_id2: ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
