@@ -48,16 +48,16 @@ You will also need Go programming language installed:
 ```
 go build -ldflags="-s -w" -o "stalkerhek" ./cmd/stalkerhek/main.go
 ./stalkerhek -help
-# ./stalkerhek -config stalkerhek.yml -bind 0.0.0.0:9999
+./stalkerhek -config stalkerhek.yml -bind 0.0.0.0:9999
 ```
 
-P.S. If you are getting error - try starting again.
+P.S. If you are getting some sort of strange 'A' error - try starting again.
 
 ## 4. Use application
 
 I suggest first testing with CURL:
 ```
-curl http://<ipaddr>:/8987/iptv
+curl http://<ipaddr>:8987/iptv
 ```
 
 You might see that there are no channels - in such case simply restart this application and try again.
