@@ -4,11 +4,8 @@ import (
 	"flag"
 	"log"
 
-	"github.com/erkexzcx/stalkerhek/internal/proxy"
-
-	"github.com/erkexzcx/stalkerhek/internal/config"
-
-	"github.com/erkexzcx/stalkerhek/pkg/stalker"
+	"github.com/erkexzcx/stalkerhek/proxy"
+	"github.com/erkexzcx/stalkerhek/stalker"
 )
 
 var flagBind = flag.String("bind", "0.0.0.0:8987", "bind IP and port")
@@ -20,34 +17,19 @@ func main() {
 
 	flag.Parse()
 
-	// Load configuration from file.
-	c, err := config.Load(flagConfig)
+	// Load configuration from file into Portal struct
+	p, err := stalker.ReadConfig(flagConfig)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	// Create new portal object out of configuration file.
-	portal := stalker.Portal{
-		Model:        c.Model,
-		SerialNumber: c.SerialNumber,
-		DeviceID:     c.DeviceID,
-		DeviceID2:    c.DeviceID2,
-		Signature:    c.Signature,
-		MAC:          c.MAC,
-		Username:     c.Username,
-		Password:     c.Password,
-		Location:     c.Location,
-		TimeZone:     c.TimeZone,
-		Token:        c.Token,
-	}
-
 	// Authenticate (connect) to Stalker portal and keep-alive it's connection.
-	if err = portal.Start(); err != nil {
+	if err = p.Start(); err != nil {
 		log.Fatalln(err)
 	}
 
 	// Retrieve channels list.
-	channels, err := portal.RetrieveChannels()
+	channels, err := p.RetrieveChannels()
 	if err != nil {
 		log.Fatalln(err)
 	}

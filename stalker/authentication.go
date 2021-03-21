@@ -3,6 +3,7 @@ package stalker
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -55,18 +56,32 @@ func (p *Portal) handshake() error {
 func (p *Portal) authenticate() (err error) {
 	// This HTTP request has different headers from the rest of HTTP requests, so perform it manually
 	type tmpStruct struct {
-		Js bool `json:"js"`
+		Js   bool   `json:"js"`
+		Text string `json:"text"`
 	}
 	var tmp tmpStruct
 
 	content, err := p.httpRequest(p.Location + "?type=stb&action=do_auth&login=" + p.Username + "&password=" + p.Password + "&device_id=" + p.DeviceID + "&device_id2=" + p.DeviceID2 + "&JsHttpRequest=1-xml")
+	if err != nil {
+		log.Println("HTTP authentication request failed")
+		return err
+	}
 
 	if err = json.Unmarshal(content, &tmp); err != nil {
+		log.Println("parsing authentication response failed")
 		return err
 	}
 
 	if tmp.Js {
+		// all good
 		return nil
 	}
+
+	fmt.Println(p)
+
+	// Let's keep it for debugging purposes...
+	log.Println(tmp.Text)
+
+	// questionable, but probably bad credentials
 	return errors.New("invalid credentials")
 }

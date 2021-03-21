@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/erkexzcx/stalkerhek/pkg/stalker"
+	"github.com/erkexzcx/stalkerhek/stalker"
 )
 
 var userAgent string

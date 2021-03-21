@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/erkexzcx/stalkerhek/pkg/stalker"
+	"github.com/erkexzcx/stalkerhek/stalker"
 )
 
 const (
