@@ -3,7 +3,6 @@ package stalker
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -72,15 +71,13 @@ func (p *Portal) authenticate() (err error) {
 		return err
 	}
 
+	log.Println("Logging in to Stalker says:")
+	log.Println(tmp.Text)
+
 	if tmp.Js {
 		// all good
 		return nil
 	}
-
-	fmt.Println(p)
-
-	// Let's keep it for debugging purposes...
-	log.Println(tmp.Text)
 
 	// questionable, but probably bad credentials
 	return errors.New("invalid credentials")

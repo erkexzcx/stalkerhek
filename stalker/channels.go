@@ -3,7 +3,6 @@ package stalker
 import (
 	"encoding/json"
 	"errors"
-	"io/ioutil"
 	"log"
 	"net/url"
 	"strings"
@@ -79,7 +78,6 @@ func (p *Portal) RetrieveChannels() (map[string]*Channel, error) {
 	if err != nil {
 		return nil, err
 	}
-	ioutil.WriteFile("/tmp/stalkerchannels.json", content, 0644)
 
 	if err := json.Unmarshal(content, &tmp); err != nil {
 		log.Println(string(content))

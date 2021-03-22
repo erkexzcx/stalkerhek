@@ -35,11 +35,9 @@ func (p *Portal) Start() error {
 		return err
 	}
 
-	if p.Username != "" {
-		// Authorize token (associate with credentials)
-		if err := p.authenticate(); err != nil {
-			return err
-		}
+	// Authorize token (associate with credentials)
+	if err := p.authenticate(); err != nil {
+		return err
 	}
 
 	// Run watchdog function once to check for errors:
