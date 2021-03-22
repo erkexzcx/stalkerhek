@@ -1,0 +1,6 @@
+language: go
+go: 
+ - 1.16.2
+ - release
+
+script: go build -ldflags="-s -w" -o ./cmd/stalkerhek/main.go

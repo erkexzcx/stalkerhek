@@ -1,5 +1,8 @@
 # WIP - Stalkerhek
 
+[![Build Status](https://travis-ci.com/erkexzcx/stalkerhek.svg?branch=master)](https://travis-ci.com/erkexzcx/stalkerhek) 
+[![Go Report Card](https://goreportcard.com/badge/github.com/erkexzcx/stalkerhek)](https://goreportcard.com/report/github.com/erkexzcx/stalkerhek)
+
 *Stalker* is a pretty popular IPTV streaming solution. Usually you can buy a TV box with preconfigured credentials and stalker portal (URL). Stalker TV box has it's own unique device ID (actually 2 IDs), signature, mac address and so on. On top of that, if you share your authentication details and set-up another TV box, the other one will get disconnected, making it possible to only watch on a single device at the same time.
 
 This software allows you to watch Stalker TV on VLC or Kodi and on multiple devices. It serves IPTV as M3U playlist and acts as a proxy.
