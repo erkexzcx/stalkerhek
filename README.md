@@ -44,7 +44,15 @@ vim stalkerhek.yml
 
 ## 3. Build & start application
 
-You will also need Go programming language installed:
+First, you have to download & install Golang from [here](https://golang.org/doc/install). DO NOT install Golang from the official repositories because they contain outdated version which is not working with this project.
+
+To ensure Golang is installed successfully, test it with `go version` command. Example:
+```
+$ go version
+go version go1.16.2 linux/amd64
+```
+
+Then build the application and test it:
 ```
 go build -ldflags="-s -w" -o "stalkerhek" ./cmd/stalkerhek/main.go
 ./stalkerhek -help
