@@ -78,9 +78,11 @@ func download(link string) (content []byte, contentType string, err error) {
 	return content, resp.Header.Get("Content-Type"), err
 }
 
-// HTTP client that does not follow redirects
-// It automatically adds "Referrerr" header which causes
-// 404 errors on some backends.
+// This Golang's HTTP client will not follow redirects.
+//
+// This is because by default it adds "Referrer" to the header, which causes
+// 404 HTTP error in some backends. With below code such header is not added
+// and redirects should be performed manually.
 var httpClient = &http.Client{
 	CheckRedirect: func(req *http.Request, via []*http.Request) error {
 		return http.ErrUseLastResponse
