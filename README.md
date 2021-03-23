@@ -1,23 +1,27 @@
-# WIP - Stalkerhek
+# Stalkerhek
 
 [![Build Status](https://travis-ci.com/erkexzcx/stalkerhek.svg?branch=master)](https://travis-ci.com/erkexzcx/stalkerhek) 
 [![Go Report Card](https://goreportcard.com/badge/github.com/erkexzcx/stalkerhek)](https://goreportcard.com/report/github.com/erkexzcx/stalkerhek)
 
-*Stalker* is a pretty popular IPTV streaming solution. Usually you can buy a TV box with preconfigured credentials and stalker portal (URL). Stalker TV box has it's own unique device ID (actually 2 IDs), signature, mac address and so on. On top of that, if you share your authentication details and set-up another TV box, the other one will get disconnected, making it possible to only watch on a single device at the same time.
+*Stalker* is a popular IPTV streaming solution. You can buy a preconfigured TV box or buy Stalker portal connection details which can be used with special TV Boxes or emulators such as [Stbemu](https://play.google.com/store/search?q=StbEmu). Stalker portal connection details consist of username & password pair, 2 unique device IDs, signature, mac address and so on. On top of that, if you setup Stalker portal in another TV Box, the other one will get disconnected, making it possible to only watch on a single device at the same time.
 
-This software allows you to watch Stalker TV on VLC or Kodi and on multiple devices. It serves IPTV as M3U playlist and acts as a proxy.
+**Stalkerhek** is a middleware/proxy/gateway application that allows watching Stalker IPTV on a simple video players, like VLC. Stalkerhek serves HLS (M3U) playlist via its integrated HTTP server, rewritting all the further links and effectively hiding original viewer's source IP from the Stalker portal.
 
-# Advantages:
+Advantages:
+* Watch Stalker IPTV on a simple media players (e.g. VLC).
+* Watch on multiple devices, even from different source IP addresses, at the same time.
 
-Here are some advatages:
-* Play on VLC rather than using emulator or STB boxes.
-* This app is the only way to play Stalker IPTV on jailbroken PS3, Movian player.
+Disadvantages/missing features:
+* Based on reverse-engineering. Expect some channels/configurations not to work at all.
+* No catching (if 5 viewers are watching the same IPTV channel at the same time, then IPTV channel will receive 5x more requests).
+* No VOD.
+* No EPG.
 
-# How to use
+# Usage
 
-This app might contain bugs and "it works for me", so you have been warned.
+## 1. Extract Stalker authorization details from TV box
 
-## 1. Extract stalker credentials and other stuff required to connect
+You can skip this step if you have below details already **and** you are sure that they are working.
 
 To extract all the authentication details, use wireshark to capture HTTP requests and analyse them by hand. I used **capture** filter `port 80 and tcp[((tcp[12:1] & 0xf0) >> 2):4] = 0x47455420` and **display** filter `http.request.method == GET`. You will likely want to use MITM attack using [arpspoof](https://www.irongeek.com/i.php?page=security/arpspoof). You will also need to restart TV box when capturing requests to see your TV box logging into stalker portal with stored authentication details. If you are smart/lucky enough, you can use port mirroring on your router and wireshark on the mirrored-to port. Anyway, you must capture the traffic in any way you can.
 
@@ -36,45 +40,54 @@ You will need the following details extracted from the wireshark logs (see `stal
 
 Regarding URL address/location: If your tv box connets to `http://domain.example.com/stalker_portal/server/load.php?...` then it's going to be `http://domain.example.com/stalker_portal/server/load.php`. If it connects to `http://domain.example.com/portal.php?...`, then it's going to be `http://domain.example.com/portal.php`. Wireshark will tell you where it connects. :)
 
-All this info will be visible in the URLs or request headers (everything should exist in wireshark capture). Let's hope SSL is not in use, otherwise I can't advise how to decrypt such traffic.
+All this info will be visible in the URLs or request headers (everything should exist in wireshark capture).
 
-## 2. Append extracted details to config file
+## 2. Create configuration file
 
-```
+```bash
 cp stalkerhek.example.yml stalkerhek.yml
 vim stalkerhek.yml
 ```
 
-## 3. Build & start application
+## 3. Build application
 
 First, you have to download & install Golang from [here](https://golang.org/doc/install). DO NOT install Golang from the official repositories because they contain outdated version which is not working with this project.
 
 To ensure Golang is installed successfully, test it with `go version` command. Example:
-```
+```bash
 $ go version
 go version go1.16.2 linux/amd64
 ```
 
 Then build the application and test it:
-```
+```bash
 go build -ldflags="-s -w" -o "stalkerhek" ./cmd/stalkerhek/main.go
 ./stalkerhek -help
 ./stalkerhek -config stalkerhek.yml -bind 0.0.0.0:9999
 ```
 
 If you decide to edit the code, you can quickly test if it works without compiling it:
-```
+```bash
 go run ./cmd/stalkerhek/main.go -help
 go run ./cmd/stalkerhek/main.go -bind 0.0.0.0:9999
 ```
 
-## 4. Use application
+## 4. Run application
 
 I suggest first testing with CURL:
-```
+```bash
 curl http://<ipaddr>:8987/iptv
 ```
 
 You might see that there are no channels - in such case simply restart this application and try again.
 
-If there are channels loaded, use above URL in VLC/Kodi. :)
+If there are channels loaded, you can use above URL in VLC/Kodi. :)
+
+## 5. Installation guidelines
+
+1. Copy/paste file `stalkerhek.service` to `/etc/systemd/system/stalkerhek.service`.
+2. Edit `/etc/systemd/system/stalkerhek.service` file and replace `myuser` with your non-root user. Also change paths if necessary.
+3. Perform `systemctl daemon-reload`.
+4. Use `systemctl <enable/disable/start/stop> stalkerhek.service` to manage this service.
+
+P.S. Sorry for those who are looking for binary releases or dockerfile - I will consider it when this project becomes more stable.
