@@ -2,7 +2,6 @@ package stalker
 
 import (
 	"encoding/json"
-	"errors"
 	"log"
 	"net/url"
 	"strings"
@@ -37,10 +36,7 @@ func (c *Channel) NewLink() (string, error) {
 	}
 
 	strs := strings.Split(tmp.Js.Cmd, " ")
-	if len(strs) == 2 {
-		return strs[1], nil
-	}
-	return "", errors.New("Stalker portal returned invalid link to TV Channel: " + tmp.Js.Cmd)
+	return strs[len(strs)-1], nil
 }
 
 // Logo returns full link to channel's logo

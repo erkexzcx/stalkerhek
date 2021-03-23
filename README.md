@@ -62,7 +62,11 @@ go build -ldflags="-s -w" -o "stalkerhek" ./cmd/stalkerhek/main.go
 ./stalkerhek -config stalkerhek.yml -bind 0.0.0.0:9999
 ```
 
-P.S. If you are getting some sort of strange 'A' error - try starting again.
+If you decide to edit the code, you can quickly test if it works without compiling it:
+```
+go run ./cmd/stalkerhek/main.go -help
+go run ./cmd/stalkerhek/main.go -bind 0.0.0.0:9999
+```
 
 ## 4. Use application
 
