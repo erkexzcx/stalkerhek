@@ -15,11 +15,6 @@ type M3U8Channel struct {
 	linkRoot string
 }
 
-func (c *M3U8Channel) newRedirectedLink(s string) {
-	c.link = s
-	c.linkRoot = deleteAfterLastSlash(s)
-}
-
 func deleteAfterLastSlash(str string) string {
 	return str[0 : strings.LastIndex(str, "/")+1]
 }

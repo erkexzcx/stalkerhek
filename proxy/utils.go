@@ -44,6 +44,7 @@ func getContentRequest(w http.ResponseWriter, r *http.Request, prefix string) (*
 }
 
 func (cr *ContentRequest) validSession() bool {
+	// It's a wild guess that 30 seconds is enough. Might be different number...
 	if time.Since(cr.Channel.sessionUpdated).Seconds() > 30 || cr.Channel.sessionUpdated.IsZero() {
 		return false
 	}
