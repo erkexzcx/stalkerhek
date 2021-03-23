@@ -3,9 +3,9 @@
 [![Build Status](https://travis-ci.com/erkexzcx/stalkerhek.svg?branch=master)](https://travis-ci.com/erkexzcx/stalkerhek) 
 [![Go Report Card](https://goreportcard.com/badge/github.com/erkexzcx/stalkerhek)](https://goreportcard.com/report/github.com/erkexzcx/stalkerhek)
 
-*Stalker* is a popular IPTV streaming solution. You can buy a preconfigured TV box or buy Stalker account which can be used in special TV Boxes or emulators such as [Stbemu](https://play.google.com/store/search?q=StbEmu). Stalker account consist of portal (URL), username/password pair, 2 unique device IDs, signature, mac address and so on. On top of that, if you setup Stalker account in another TV Box, the other one will get disconnected, making it possible to only watch on a single device at the same time.
+*Stalker* is a popular IPTV streaming solution. You can buy a preconfigured TV box or just a Stalker account which can be used in special TV Boxes or emulators such as [Stbemu](https://play.google.com/store/search?q=StbEmu). Stalker account consists of portal (URL), username/password pair, 2 unique device IDs, signature, mac address and so on. On top of that, if you setup Stalker account in another TV Box, the other one will get disconnected, making it possible to only watch on a single device at the same time.
 
-**Stalkerhek** is a proxy server and converter from Stalker IPTV to HLS, allowing to watch Stalker IPTV using simple video players, such as VLC. Stalkerhek serves Stalker's provided channels list as HLS (M3U) playlist and rewrites all further links, forcing all IPTV requests through this application and effectively hiding original viewer's source IP from Stalker middleware.
+**Stalkerhek** is a proxy server and converter from Stalker IPTV to HLS format, allowing to watch Stalker IPTV using simple video players, such as VLC. Stalkerhek serves Stalker's provided channels list as HLS (M3U) playlist and rewrites all further links, forcing all IPTV requests to go through this application and effectively hiding original viewer's source IP from Stalker middleware.
 
 Advantages:
 * Watch Stalker IPTV on a simple media players (e.g. VLC).
