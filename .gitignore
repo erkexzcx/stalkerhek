@@ -1,3 +1,5 @@
-!/stalkerhek.example.yml
-/stalkerhek
 /*.yml
+!/stalkerhek.example.yml
+!/.travis.yml
+
+/stalkerhek
