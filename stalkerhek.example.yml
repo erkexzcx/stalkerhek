@@ -4,8 +4,8 @@ device_id: ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
 device_id2: ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
 signature: ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
 mac: 00:00:00:00:00:00
-username: myusername
-password: mypassword
+username: myusername # Delete this line if no credentials
+password: mypassword # Delete this line if no credentials
 portal_url: http://domain.example.com/stalker_portal/server/load.php
 time_zone: Europe/Vilnius
 token: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
