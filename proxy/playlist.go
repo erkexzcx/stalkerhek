@@ -34,6 +34,7 @@ type Channel struct {
 }
 
 var playlist map[string]*Channel
+var sortedChannels []string
 
 func getLinkType(contentType string) int {
 	contentType = strings.ToLower(contentType)

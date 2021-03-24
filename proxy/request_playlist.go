@@ -11,7 +11,7 @@ func playlistHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 
 	fmt.Fprintln(w, "#EXTM3U")
-	for title := range playlist {
+	for _, title := range sortedChannels {
 		link := "http://" + r.Host + "/iptv/" + url.PathEscape(title)
 		logo := "http://" + r.Host + "/logo/" + url.PathEscape(title)
 
