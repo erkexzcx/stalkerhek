@@ -115,9 +115,9 @@ You should get the same response.
 
 If response was the same, it means proxy service is working and you can now use this proxy service URL as stalker portal URL.
 
-Note that this service is **not appending**, but **replacing** values on-the-fly. It means you have to add any fake credentials, serial numbers, device IDs etc. to your Stalker client in order for it to work.
+Note that this service is **not appending**, but **replacing** values on-the-fly. It means you have to leave credentials, serial numbers, device IDs etc. non empty, otherwise client would not send them and configuration would not work. In other words, add any fake details to your Stalker IPTV client's configuration.
 
-**Instructions for Kodi**: In Kodi Stalker addon settings, use Portal URL in the same format as you tried above (`http://ipaddr>:8888/stalker_portal/server/load.php`). Add any fake username/password, any numbers/letters in device IDs, serial numbers etc. Restart Kodi and :tada:.
+**Instructions for Kodi**: In Kodi Stalker addon settings, use Portal URL in the same format as you tested with CURL above (`http://ipaddr>:8888/stalker_portal/server/load.php`). Add any fake username/password, any numbers/letters in device IDs, serial numbers etc. Restart Kodi and :tada:.
 
 ## 5. Installation guidelines
 
