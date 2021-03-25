@@ -51,11 +51,11 @@ func main() {
 		}()
 	}
 
-	if c.HLS.Enabled {
+	if c.Proxy.Enabled {
 		wg.Add(1)
 		go func() {
 			log.Println("Starting proxy service...")
-			proxy.Start(c.Portal, c.HLS.Bind)
+			proxy.Start(c.Portal, c.Proxy.Bind)
 			wg.Done()
 		}()
 	}
