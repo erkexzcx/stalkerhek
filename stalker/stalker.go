@@ -9,21 +9,6 @@ import (
 	"time"
 )
 
-// Portal stores details about stalker portal
-type Portal struct {
-	Model        string `yaml:"model"`
-	SerialNumber string `yaml:"serial_number"`
-	DeviceID     string `yaml:"device_id"`
-	DeviceID2    string `yaml:"device_id2"`
-	Signature    string `yaml:"signature"`
-	MAC          string `yaml:"mac"`
-	Username     string `yaml:"username"`
-	Password     string `yaml:"password"`
-	Location     string `yaml:"portal_url"`
-	TimeZone     string `yaml:"time_zone"`
-	Token        string `yaml:"token"`
-}
-
 var httpClient = &http.Client{
 	Timeout: time.Second * 10,
 }
@@ -70,10 +55,7 @@ func (p *Portal) httpRequest(link string) ([]byte, error) {
 	req.Header.Set("X-User-Agent", "Model: "+p.Model+"; Link: Ethernet")
 	req.Header.Set("Authorization", "Bearer "+p.Token)
 
-	cookieText := "PHPSESSID=null; mac=" + url.QueryEscape(p.MAC) + "; stb_lang=en; timezone=" + url.QueryEscape(p.TimeZone) + ";"
-	if p.SerialNumber != "" {
-		cookieText += " sn=" + url.QueryEscape(p.SerialNumber) + ";"
-	}
+	cookieText := "PHPSESSID=null; sn=" + url.QueryEscape(p.SerialNumber) + "; mac=" + url.QueryEscape(p.MAC) + "; stb_lang=en; timezone=" + url.QueryEscape(p.TimeZone) + ";"
 
 	req.Header.Set("Cookie", cookieText)
 

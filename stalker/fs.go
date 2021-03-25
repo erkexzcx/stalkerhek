@@ -3,58 +3,120 @@ package stalker
 import (
 	"errors"
 	"io/ioutil"
+	"log"
+	"math/rand"
+	"regexp"
 	"strings"
 
 	"gopkg.in/yaml.v2"
 )
 
+type Config struct {
+	Portal *Portal `yaml:"portal"`
+	HLS    struct {
+		Enabled bool   `yaml:"enabled"`
+		Bind    string `yaml:"bind"`
+	} `yaml:"hls"`
+	Proxy struct {
+		Enabled bool   `yaml:"enabled"`
+		Bind    string `yaml:"bind"`
+	} `yaml:"proxy"`
+}
+
+type Portal struct {
+	Model        string `yaml:"model"`
+	SerialNumber string `yaml:"serial_number"`
+	DeviceID     string `yaml:"device_id"`
+	DeviceID2    string `yaml:"device_id2"`
+	Signature    string `yaml:"signature"`
+	MAC          string `yaml:"mac"`
+	Username     string `yaml:"username"`
+	Password     string `yaml:"password"`
+	Location     string `yaml:"url"`
+	TimeZone     string `yaml:"time_zone"`
+	Token        string `yaml:"token"`
+}
+
 // ReadConfig returns configuration from the file in Portal object
-func ReadConfig(path *string) (*Portal, error) {
+func ReadConfig(path *string) (*Config, error) {
 	content, err := ioutil.ReadFile(*path)
 	if err != nil {
 		return nil, err
 	}
 
-	var p *Portal
-	err = yaml.Unmarshal(content, &p)
+	var c *Config
+	err = yaml.Unmarshal(content, &c)
 	if err != nil {
 		return nil, err
 	}
 
-	if err = p.Validate(); err != nil {
+	if err = c.ValidateWithDefaults(); err != nil {
 		return nil, err
 	}
-	return p, nil
+	return c, nil
 }
 
-// Validate validates checks
-func (p *Portal) Validate() error {
-	// ### I have no clue about the differences between these 2...
-	// if p.Model != "MAG250" && p.Model != "MAG254" {
-	// 	return errors.New("only supported models are MAG250 and MAG254")
-	// }
-	if strings.Replace(p.MAC, " ", "", 1) != p.MAC {
-		return errors.New("MAC cannot contain spaces")
-	}
-	if p.MAC == "" {
-		return errors.New("MAC cannot be empty")
-	}
-	if !strings.HasSuffix(p.Location, ".php") {
-		return errors.New("invalid Stalker portal location: it must end with '.php'")
+var regexMAC = regexp.MustCompile(`^[A-F0-9]{2}:[A-F0-9]{2}:[A-F0-9]{2}:[A-F0-9]{2}:[A-F0-9]{2}:[A-F0-9]{2}$`)
+var regexTimezone = regexp.MustCompile(`^[a-zA-Z]+/[a-zA-Z]+$`)
+
+func (c *Config) ValidateWithDefaults() error {
+	c.Portal.MAC = strings.ToUpper(c.Portal.MAC)
+
+	if c.Portal.Model == "" {
+		return errors.New("empty model")
 	}
 
-	if strings.Replace(p.TimeZone, " ", "", 1) != p.TimeZone {
-		return errors.New("timezone cannot contain spaces")
-	}
-	if p.TimeZone == "" {
-		return errors.New("timezone cannot be empty")
+	if c.Portal.SerialNumber == "" {
+		return errors.New("empty serial number (sn)")
 	}
 
-	if strings.Replace(p.Token, " ", "", 1) != p.Token {
-		return errors.New("token cannot contain spaces")
+	if c.Portal.DeviceID == "" {
+		return errors.New("empty device_id")
 	}
-	if p.Token == "" {
-		return errors.New("token cannot be empty")
+
+	if c.Portal.DeviceID2 == "" {
+		return errors.New("empty device_id2")
 	}
+
+	if c.Portal.Signature == "" {
+		return errors.New("empty signature")
+	}
+
+	if !regexMAC.MatchString(c.Portal.MAC) {
+		return errors.New("invalid MAC '" + c.Portal.MAC + "'")
+	}
+
+	/* Username and password fields are optional */
+
+	if !regexTimezone.MatchString(c.Portal.TimeZone) {
+		return errors.New("invalid timezone '" + c.Portal.TimeZone + "'")
+	}
+
+	if !c.HLS.Enabled && !c.Proxy.Enabled {
+		return errors.New("no services enabled")
+	}
+
+	if c.HLS.Enabled && c.HLS.Bind == "" {
+		return errors.New("empty HLS bind")
+	}
+
+	if c.Proxy.Enabled && c.Proxy.Bind == "" {
+		return errors.New("empty proxy bind")
+	}
+
+	if c.Portal.Token == "" {
+		c.Portal.Token = randomToken()
+		log.Println("No token given, using random one:", c.Portal.Token)
+	}
+
 	return nil
+}
+
+func randomToken() string {
+	allowlist := []rune("ABCDEF0123456789")
+	b := make([]rune, 32)
+	for i := range b {
+		b[i] = allowlist[rand.Intn(len(allowlist))]
+	}
+	return string(b)
 }
