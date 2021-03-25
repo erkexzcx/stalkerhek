@@ -14,8 +14,6 @@ Advantages:
 Disadvantages/missing features:
 * Based on reverse-engineering. Expect some channels/configurations not to work at all.
 * No caching (if 5 viewers are watching the same IPTV channel at the same time, then IPTV channel will receive 5x more requests).
-* No VOD.
-* No EPG.
 
 # Services
 
