@@ -117,6 +117,8 @@ Note that this service is **not appending**, but **replacing** values on-the-fly
 
 **Instructions for Kodi**: In Kodi Stalker addon settings, use Portal URL in the same format as you tested with CURL above (`http://ipaddr>:8888/stalker_portal/server/load.php`). Add any fake username/password, any numbers/letters in device IDs, serial numbers etc. Restart Kodi and :tada:.
 
+**Instructions for other apps**: Same as Kodi, except Stalker URL is slightly different - `http://ipaddr>:8888/stalker_portal/c`. Add any fake username/password, any numbers/letters in device IDs, serial numbers etc. Restart and :tada:.
+
 ## 5. Installation guidelines
 
 1. Copy/paste file `stalkerhek.service` to `/etc/systemd/system/stalkerhek.service`.
