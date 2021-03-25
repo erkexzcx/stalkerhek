@@ -1,7 +1,6 @@
 package proxy
 
 import (
-	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -32,8 +31,6 @@ func Start(p *stalker.Portal, bind string) {
 }
 
 func requestHandler(w http.ResponseWriter, r *http.Request) {
-	log.Println("Received:", r.RequestURI)
-
 	query := r.URL.Query()
 
 	var tagAction string
@@ -109,7 +106,6 @@ func requestHandler(w http.ResponseWriter, r *http.Request) {
 	// Proxy modified request to real Stalker portal and return the response
 
 	// Build (modified) URL
-	fmt.Println("path:", r.URL.Path)
 	finalLink := destination + r.URL.Path
 	if len(r.URL.RawQuery) != 0 {
 		finalLink += "?" + query.Encode()
