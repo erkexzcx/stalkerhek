@@ -3,6 +3,7 @@ package proxy
 import (
 	"net/http"
 	"net/url"
+	"strings"
 )
 
 func getRequest(link string, originalRequest *http.Request) (*http.Response, error) {
@@ -24,4 +25,10 @@ func getRequest(link string, originalRequest *http.Request) (*http.Response, err
 	}
 
 	return http.DefaultClient.Do(req)
+}
+
+func addHeaders(from, to http.Header) {
+	for k, v := range from {
+		to.Set(k, strings.Join(v, "; "))
+	}
 }

@@ -34,7 +34,7 @@ func handleEstablishedContentM3U8(w http.ResponseWriter, r *http.Request, cr *Co
 	switch {
 	case contentType == "application/vnd.apple.mpegurl" || contentType == "application/x-mpegurl": // M3U8 metadata
 		content := rewriteLinks(&resp.Body, prefix, cr.Channel.LinkM3u8Ref.linkRoot)
-		addHeaders(resp.Header, w.Header(), false)
+		addHeaders(resp.Header, w.Header())
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprint(w, content)
 	default: // media (or anything else)

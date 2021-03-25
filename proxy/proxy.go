@@ -31,6 +31,8 @@ func Start(p *stalker.Portal, bind string) {
 }
 
 func requestHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println(r.RequestURI)
+
 	query := r.URL.Query()
 
 	var tagAction string
@@ -116,6 +118,7 @@ func requestHandler(w http.ResponseWriter, r *http.Request) {
 	defer resp.Body.Close()
 
 	// Send response
+	addHeaders(resp.Header, w.Header())
 	w.WriteHeader(resp.StatusCode)
 	io.Copy(w, resp.Body)
 }
