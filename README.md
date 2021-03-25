@@ -5,7 +5,7 @@
 
 *Stalker* is a popular IPTV streaming solution. You can buy a preconfigured TV box or just a Stalker account which can be used in special TV Boxes or emulators such as [Stbemu](https://play.google.com/store/search?q=StbEmu). Stalker account consists of portal (URL), username/password (optional), 2 unique device IDs, signature, mac address and so on. On top of that, if you setup Stalker account in another TV Box, the other one will get disconnected, making it possible to only watch on a single device at the same time.
 
-**Stalkerhek** application allows to share single Stalker account between multiple STB boxes as well as makes it possible to watch Stalker IPTV using simple video players, such as VLC.
+**Stalkerhek** application allows you to share single Stalker account between multiple STB boxes as well as makes it possible to watch Stalker IPTV using simple video players, such as VLC.
 
 Advantages:
 * Watch Stalker IPTV on a simple media players (e.g. VLC).
