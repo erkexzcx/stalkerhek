@@ -1,13 +1,11 @@
 # Stalkerhek
 
-# DO NOT USE THIS GIT BRANCH. IT'S FOR DEVELOPMENT PURPOSES!!!
-
 [![Build Status](https://travis-ci.com/erkexzcx/stalkerhek.svg?branch=master)](https://travis-ci.com/erkexzcx/stalkerhek) 
 [![Go Report Card](https://goreportcard.com/badge/github.com/erkexzcx/stalkerhek)](https://goreportcard.com/report/github.com/erkexzcx/stalkerhek)
 
 *Stalker* is a popular IPTV streaming solution. You can buy a preconfigured TV box or just a Stalker account which can be used in special TV Boxes or emulators such as [Stbemu](https://play.google.com/store/search?q=StbEmu). Stalker account consists of portal (URL), username/password (optional), 2 unique device IDs, signature, mac address and so on. On top of that, if you setup Stalker account in another TV Box, the other one will get disconnected, making it possible to only watch on a single device at the same time.
 
-**Stalkerhek** is a proxy server and converter from Stalker IPTV to HLS format, allowing to watch Stalker IPTV using simple video players, such as VLC. Stalkerhek serves Stalker's provided channels list as HLS (M3U) playlist and rewrites all further links, forcing all IPTV requests to go through this application and effectively hiding original viewer's source IP from Stalker middleware.
+**Stalkerhek** application allows to share single Stalker account between multiple STB boxes as well as makes it possible to watch Stalker IPTV using simple video players, such as VLC.
 
 Advantages:
 * Watch Stalker IPTV on a simple media players (e.g. VLC).
@@ -19,9 +17,21 @@ Disadvantages/missing features:
 * No VOD.
 * No EPG.
 
+# Services
+
+There 2 different services provided by Stalkerhek. They both can be used at the same time.
+
+## HLS service
+
+This service spawns a proxy server which converter from Stalker IPTV to HLS format, allowing to watch Stalker IPTV using simple video players, such as VLC. This service serves channels list as HLS (M3U) playlist and rewrites all further metadata/media links, forcing all the further traffic to go through this application and effectively hide original viewer's source IP from Stalker middleware.
+
+## Proxy service
+
+This service spawns a proxy server which is intended to be used for single Stalker account sharing between different STB boxes. Speaking about internals - STB boxes configured to use this service as Stalker portal will always be able work, because this service silently ignores authentication, watchdog and logoff requests (returns expected, but fake replies), while full functionality of real Stalker portal will be accessible.
+
 # Usage
 
-## 1. Extract Stalker authorization details from TV box
+## 1. Extract Stalker authorization details from STB box
 
 You can skip this step if you have below details already **and** you are sure that they are working.
 
@@ -46,7 +56,9 @@ Regarding URL address/location: If your tv box connets to `http://domain.example
 
 All this info will be visible in the URLs or request headers (everything should exist in wireshark capture).
 
-## 2. Create configuration file
+## 2. Configuration
+
+Create configuration file as per below commands:
 
 ```bash
 cp stalkerhek.example.yml stalkerhek.yml
@@ -67,25 +79,45 @@ Then build the application and test it:
 ```bash
 go build -ldflags="-s -w" -o "stalkerhek" ./cmd/stalkerhek/main.go
 ./stalkerhek -help
-./stalkerhek -config stalkerhek.yml -bind 0.0.0.0:9999
+./stalkerhek -config stalkerhek.yml
 ```
 
 If you decide to edit the code, you can quickly test if it works without compiling it:
 ```bash
 go run ./cmd/stalkerhek/main.go -help
-go run ./cmd/stalkerhek/main.go -bind 0.0.0.0:9999
+go run ./cmd/stalkerhek/main.go -config stalkerhek.yml
 ```
 
-## 4. Run application
+## 4. Usage
+
+### HLS service
 
 I suggest first testing with CURL:
 ```bash
-curl http://<ipaddr>:8987/iptv
+curl http://<ipaddr>:9999/iptv
 ```
 
-You might see that there are no channels - in such case simply restart this application and try again.
+If you see there are channels loaded, use above URL in VLC.
 
-If there are channels loaded, you can use above URL in VLC/Kodi. :)
+### Proxy service
+
+Check if you can get response using CURL from the real Stalker middleware URL:
+```
+curl http://example.com/stalker_portal/server/load.php
+```
+
+Do the same, but replace host:port with this service host:port as per below example:
+```
+curl http://ipaddr>:8888/stalker_portal/server/load.php
+```
+
+You should get the same response.
+
+If response was the same, it means proxy service is working and you can now use this proxy service URL as stalker portal URL.
+
+Note that this service is **not appending**, but **replacing** values on-the-fly. It means you have to add any fake credentials, serial numbers, device IDs etc. to your Stalker client in order for it to work.
+
+**Instructions for Kodi**: In Kodi Stalker addon settings, use Portal URL in the same format as you tried above (`http://ipaddr>:8888/stalker_portal/server/load.php`). Add any fake username/password, any numbers/letters in device IDs, serial numbers etc. Restart Kodi and :tada:.
 
 ## 5. Installation guidelines
 

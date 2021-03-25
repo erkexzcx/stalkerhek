@@ -32,7 +32,7 @@ type Portal struct {
 	MAC          string `yaml:"mac"`
 	Username     string `yaml:"username"`
 	Password     string `yaml:"password"`
-	Location     string `yaml:"portal_url"`
+	Location     string `yaml:"url"`
 	TimeZone     string `yaml:"time_zone"`
 	Token        string `yaml:"token"`
 }

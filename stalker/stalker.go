@@ -55,10 +55,7 @@ func (p *Portal) httpRequest(link string) ([]byte, error) {
 	req.Header.Set("X-User-Agent", "Model: "+p.Model+"; Link: Ethernet")
 	req.Header.Set("Authorization", "Bearer "+p.Token)
 
-	cookieText := "PHPSESSID=null; mac=" + url.QueryEscape(p.MAC) + "; stb_lang=en; timezone=" + url.QueryEscape(p.TimeZone) + ";"
-	if p.SerialNumber != "" {
-		cookieText += " sn=" + url.QueryEscape(p.SerialNumber) + ";"
-	}
+	cookieText := "PHPSESSID=null; sn=" + url.QueryEscape(p.SerialNumber) + "; mac=" + url.QueryEscape(p.MAC) + "; stb_lang=en; timezone=" + url.QueryEscape(p.TimeZone) + ";"
 
 	req.Header.Set("Cookie", cookieText)
 

@@ -33,6 +33,5 @@ func Start(chs map[string]*stalker.Channel, bind string) {
 	http.HandleFunc("/logo/", logoHandler)
 
 	log.Println("HLS service should be started!")
-
 	panic(http.ListenAndServe(bind, nil))
 }
