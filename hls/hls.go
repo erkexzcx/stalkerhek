@@ -28,10 +28,13 @@ func Start(chs map[string]*stalker.Channel, bind string) {
 	}
 	sort.Strings(sortedChannels)
 
-	http.HandleFunc("/iptv", playlistHandler)
-	http.HandleFunc("/iptv/", channelHandler)
-	http.HandleFunc("/logo/", logoHandler)
+	// It's like separate web server's instance
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("/iptv", playlistHandler)
+	mux.HandleFunc("/iptv/", channelHandler)
+	mux.HandleFunc("/logo/", logoHandler)
 
 	log.Println("HLS service should be started!")
-	panic(http.ListenAndServe(bind, nil))
+	panic(http.ListenAndServe(bind, mux))
 }
