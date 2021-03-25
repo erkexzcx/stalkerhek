@@ -27,7 +27,7 @@ This service spawns a proxy server which converts from Stalker IPTV to HLS forma
 
 ## Proxy service
 
-This service spawns a proxy server which is intended to be used for single Stalker account sharing between different STB boxes. Speaking about internals - STB boxes configured to use this service as Stalker portal will always be able work, because this service silently ignores authentication, watchdog and logoff requests (returns expected, but fake replies), while full functionality of real Stalker portal will be accessible.
+This service spawns a proxy server which is intended to be used for single Stalker account sharing between different STB boxes. Speaking about internals - STB boxes configured to use this service as Stalker portal will get fake (but expected) replies to authentication, watchdog and logoff requests, while being able to access all features of Stalker middleware with fake credentials as they are being rewritten on-the-fly.
 
 # Usage
 
