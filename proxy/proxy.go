@@ -48,7 +48,6 @@ func requestHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Handshake
 	if tagAction == "handshake" {
-		log.Println("Received 'handshake' request... :)")
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{"js":{"token":"123456789012345678901234567890AF","random":"123456789012345678901234567890AF7890AFAA"},"text":"generated in: 0.001s; query counter: 1; cache hits: 0; cache miss: 0; php errors: 0; sql errors: 0;"}`))
 		// TODO - when given token is accepted by the server, message is different (shorter) and would be more applicable here.
@@ -57,7 +56,6 @@ func requestHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Watchdog
 	if tagAction == "get_events" && tagType == "watchdog" {
-		log.Println("Received 'watchdog' request... :)")
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{"js":{"data":{"msgs":0,"additional_services_on":"1"}},"text":"generated in: 0.01s; query counter: 4; cache hits: 0; cache miss: 0; php errors: 0; sql errors: 0;"}`))
 		return
@@ -65,7 +63,6 @@ func requestHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Authentication
 	if tagAction == "do_auth" {
-		log.Println("Received 'do_auth' request... :)")
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{"js":true,"text":"array(2) {\n  [\"status\"]=>\n  string(2) \"OK\"\n  [\"results\"]=>\n  bool(true)\n}\ngenerated in: 1.033s; query counter: 7; cache hits: 0; cache miss: 0; php errors: 0; sql errors: 0;"}`))
 		return
@@ -73,7 +70,6 @@ func requestHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Logoff
 	if tagAction == "???" {
-		log.Println("Received '???' request... :)")
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`???`))
 		return
