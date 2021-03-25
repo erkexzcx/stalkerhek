@@ -19,7 +19,7 @@ Disadvantages/missing features:
 
 # Services
 
-There 2 different services provided by Stalkerhek. They both can be used at the same time.
+There are 2 different services provided by Stalkerhek. They both can be used at the same time.
 
 ## HLS service
 
