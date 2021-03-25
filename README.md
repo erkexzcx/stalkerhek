@@ -23,7 +23,7 @@ There 2 different services provided by Stalkerhek. They both can be used at the 
 
 ## HLS service
 
-This service spawns a proxy server which converter from Stalker IPTV to HLS format, allowing to watch Stalker IPTV using simple video players, such as VLC. This service serves channels list as HLS (M3U) playlist and rewrites all further metadata/media links, forcing all the further traffic to go through this application and effectively hide original viewer's source IP from Stalker middleware.
+This service spawns a proxy server which converts from Stalker IPTV to HLS format, allowing to watch Stalker IPTV using simple video players, such as VLC. This service serves channels list as HLS (M3U) playlist and rewrites all further metadata/media links, forcing all the further traffic to go through this application and effectively hide original viewer's source IP from Stalker middleware.
 
 ## Proxy service
 
