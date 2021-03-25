@@ -1,38 +1,22 @@
 package proxy
 
 import (
-	"log"
 	"net/http"
-	"sort"
-	"sync"
 
 	"github.com/erkexzcx/stalkerhek/stalker"
 )
 
-var userAgent string
+var portal *stalker.Portal
 
-// Start starts web server and serves playlist
-func Start(chs map[string]*stalker.Channel, flagBind *string) {
+func Start(p *stalker.Portal, bind string) {
+	portal = p
 
-	// Initialize playlist
-	playlist = make(map[string]*Channel)
-	sortedChannels = make([]string, 0, len(chs))
-	for k, v := range chs {
-		playlist[k] = &Channel{
-			StalkerChannel: v,
-			Mux:            sync.Mutex{},
-			Logo:           v.Logo(),
-			Genre:          v.Genre(),
-		}
-		sortedChannels = append(sortedChannels, k)
-	}
-	sort.Strings(sortedChannels)
+	http.HandleFunc("/", requestHandler)
 
-	http.HandleFunc("/iptv", playlistHandler)
-	http.HandleFunc("/iptv/", channelHandler)
-	http.HandleFunc("/logo/", logoHandler)
+	panic(http.ListenAndServe(bind, nil))
+}
 
-	log.Println("Web server should be started!")
-
-	panic(http.ListenAndServe(*flagBind, nil))
+func requestHandler(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(portal.Model))
 }

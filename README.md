@@ -1,5 +1,7 @@
 # Stalkerhek
 
+# DO NOT USE THIS GIT BRANCH. IT'S FOR DEVELOPMENT PURPOSES!!!
+
 [![Build Status](https://travis-ci.com/erkexzcx/stalkerhek.svg?branch=master)](https://travis-ci.com/erkexzcx/stalkerhek) 
 [![Go Report Card](https://goreportcard.com/badge/github.com/erkexzcx/stalkerhek)](https://goreportcard.com/report/github.com/erkexzcx/stalkerhek)
 

@@ -9,21 +9,6 @@ import (
 	"time"
 )
 
-// Portal stores details about stalker portal
-type Portal struct {
-	Model        string `yaml:"model"`
-	SerialNumber string `yaml:"serial_number"`
-	DeviceID     string `yaml:"device_id"`
-	DeviceID2    string `yaml:"device_id2"`
-	Signature    string `yaml:"signature"`
-	MAC          string `yaml:"mac"`
-	Username     string `yaml:"username"`
-	Password     string `yaml:"password"`
-	Location     string `yaml:"portal_url"`
-	TimeZone     string `yaml:"time_zone"`
-	Token        string `yaml:"token"`
-}
-
 var httpClient = &http.Client{
 	Timeout: time.Second * 10,
 }

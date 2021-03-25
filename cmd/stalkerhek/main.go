@@ -3,12 +3,13 @@ package main
 import (
 	"flag"
 	"log"
+	"sync"
 
+	"github.com/erkexzcx/stalkerhek/hls"
 	"github.com/erkexzcx/stalkerhek/proxy"
 	"github.com/erkexzcx/stalkerhek/stalker"
 )
 
-var flagBind = flag.String("bind", "0.0.0.0:8987", "bind IP and port")
 var flagConfig = flag.String("config", "stalkerhek.yml", "path to the config file")
 
 func main() {
@@ -18,22 +19,46 @@ func main() {
 	flag.Parse()
 
 	// Load configuration from file into Portal struct
-	p, err := stalker.ReadConfig(flagConfig)
+	c, err := stalker.ReadConfig(flagConfig)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	// Authenticate (connect) to Stalker portal and keep-alive it's connection.
-	if err = p.Start(); err != nil {
+	log.Println("Connecting to Stalker middleware...")
+	if err = c.Portal.Start(); err != nil {
 		log.Fatalln(err)
 	}
 
 	// Retrieve channels list.
-	channels, err := p.RetrieveChannels()
+	log.Println("Retrieving channels list from Stalker middleware...")
+	channels, err := c.Portal.RetrieveChannels()
 	if err != nil {
 		log.Fatalln(err)
 	}
+	if len(channels) == 0 {
+		log.Fatalln("no IPTV channels retrieved from Stalker middleware. quitting...")
+	}
 
-	// Start web server
-	proxy.Start(channels, flagBind)
+	var wg sync.WaitGroup
+
+	if c.HLS.Enabled {
+		wg.Add(1)
+		go func() {
+			log.Println("Starting HLS service...")
+			hls.Start(channels, c.HLS.Bind)
+			wg.Done()
+		}()
+	}
+
+	if c.HLS.Enabled {
+		wg.Add(1)
+		go func() {
+			log.Println("Starting proxy service...")
+			proxy.Start(c.Portal, c.HLS.Bind)
+			wg.Done()
+		}()
+	}
+
+	wg.Wait()
 }
