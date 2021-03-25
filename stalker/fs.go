@@ -88,6 +88,10 @@ func (c *Config) ValidateWithDefaults() error {
 
 	/* Username and password fields are optional */
 
+	if c.Portal.Location == "" {
+		return errors.New("empty portal url")
+	}
+
 	if !regexTimezone.MatchString(c.Portal.TimeZone) {
 		return errors.New("invalid timezone '" + c.Portal.TimeZone + "'")
 	}
