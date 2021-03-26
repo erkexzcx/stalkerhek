@@ -7,7 +7,7 @@
 
 STB boxes usually have hardcoded parameters, such as MAC address, 2 device IDs and signature that cannot be changed. Providers themselves can setup such STB boxes by enterring Stalker portal URL with credentials, then mapping device's hardcoded parameters to the added credentials, making it (theoretically) impossible to clone STB box. STB boxes will also contact Stalker middleware saying "hey, my username is X and my token is Y, please log off all other devices under my username that use any other token" which also makes it possible to only use a single STB box at a time.
 
-Looking from security perspective, STB boxes communicate with Stalker middleware in simple HTTP requests (without SSL) and sends its hardcoded parameters/credentials in both URL query and request headers (think of `http://example.com/load.php?username=abc&password=aaa`).
+Looking from security perspective, STB boxes communicate with Stalker middleware in simple HTTP requests (without SSL) and sends its hardcoded parameters/credentials in both URL query and request headers (think of `http://example.com/load.php?username=abc&password=aaa`) in a plain text.
 
 **Stalkerhek** is a Stalker middleware proxy application that allows you to share the same Stalker portal account on (theoretically) unlimited amount of STB boxes and makes it possible to watch Stalker portal IPTV in simple video players, such as VLC. This application itself connects to Stalker portal, authenticates with it and keeps sending keep-alive requests to remain connected. The rest is being done by this application's [#Services](#Services).
 
@@ -27,7 +27,7 @@ Note that there is no caching. if 5 devices are watching the same channel, the I
 
 *Used for sharing single Staler portal credentials between multiple STB boxes.*
 
-This service spawns a HTTP web server which is used as a Stalker portal in STB boxes. It forwards all the incoming requests from STB boxes to the real Stalker portal, but rewrites all the credentials and hardcoded parameters.
+This service spawns a HTTP web server which is used as a Stalker portal in STB boxes. It forwards all the incoming requests from STB boxes to the real Stalker portal, but on-the-fly rewrites all the credentials and hardcoded parameters.
 
 How your current setup looks like:
 ```
