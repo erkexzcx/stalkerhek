@@ -3,37 +3,54 @@
 [![Build Status](https://travis-ci.com/erkexzcx/stalkerhek.svg?branch=master)](https://travis-ci.com/erkexzcx/stalkerhek) 
 [![Go Report Card](https://goreportcard.com/badge/github.com/erkexzcx/stalkerhek)](https://goreportcard.com/report/github.com/erkexzcx/stalkerhek)
 
-*Stalker* is a popular IPTV streaming solution. You can buy a preconfigured TV box or just a Stalker account which can be used in special TV Boxes or emulators such as [Stbemu](https://play.google.com/store/search?q=StbEmu). Stalker account consists of portal (URL), username/password (optional), 2 unique device IDs, signature, mac address and so on. On top of that, if you setup Stalker account in another TV Box, the other one will get disconnected, making it possible to only watch on a single device at the same time.
+*Stalker* (usually referred as "Stalker middleware") is a popular IPTV streaming solution. It is originally intended to be used with a special TV boxes (also known as "STB" or "STB boxes"), but software solutions can also be used (e.g. [Stbemu](https://play.google.com/store/search?q=StbEmu)). Benefits of Stalker middleware include user/TV box authorization, IPTV, integrated EPG, VOD, media library and language support, making it nice all-in-one solution for a TV box. Underlaying IPTV video streams are being provided in HLS which is widely supported format by almost all video players (e.g. VLC).
 
-**Stalkerhek** application allows you to share single Stalker account between multiple STB boxes as well as makes it possible to watch Stalker IPTV using simple video players, such as VLC.
+STB boxes usually have hardcoded parameters, such as MAC address, 2 device IDs and signature that cannot be changed. Providers themselves can setup such STB boxes by enterring Stalker portal URL with credentials, then mapping device's hardcoded parameters to the added credentials, making it (theoretically) impossible to clone STB box. STB boxes will also contact Stalker middleware saying "hey, my username is X and my token is Y, please log off all other devices under my username that uses different tokens" which also makes it possible to watch only on a single STB box at a time.
 
-Advantages:
-* Watch Stalker IPTV on a simple media players (e.g. VLC).
-* Watch on multiple devices, even from different source IP addresses, at the same time.
+Looking from security perspective, STB boxes communicate with Stalker middleware in simple HTTP requests (without SSL) and sends its hardcoded parameters/credentials in both URL query and headers (think of `http://example.com/load.php?username=abc&password=aaa`).
 
-Disadvantages/missing features:
-* Based on reverse-engineering. Expect some channels/configurations not to work at all.
-* No caching (if 5 viewers are watching the same IPTV channel at the same time, then IPTV channel will receive 5x more requests).
+**Stalkerhek** is a special Stalker middleware proxy application that allows you to share the same Stalker portal account on (theoretically) unlimited amount of STB boxes and makes it possible to watch Stalker portal IPTV in simple video players, such as VLC. This application itself connects to Stalker portal, authenticates with it and keeps sending keep-alive requests to stay connected. The rest is being done by this application's [#Services](#Services).
 
 # Services
 
-There are 2 different services provided by Stalkerhek. They both can be used at the same time.
+There are 2 services provided by Stalkerhek. They both can be used at the same time.
 
 ## HLS service
 
-This service spawns a proxy server which converts from Stalker IPTV to HLS format, allowing to watch Stalker IPTV using simple video players, such as VLC. This service serves channels list as HLS (M3U) playlist and rewrites all further metadata/media links, forcing all the further traffic to go through this application and effectively hide original viewer's source IP from Stalker middleware.
+*Used for viewing Stalker IPTV in simple video players, such as VLC.*
+
+This service spawns a HTTP web server that returns HLS playlist of all Stalker IPTV channels when requested. All returned IPTV links are rewritten in a way that all the stream traffic will go through this application, eventually hiding original viewer's source IP from IPTV provider as well as hiding IPTV provider's server IP/host from IPTV viewer.
+
+Note that there is no caching. if 5 devices are watching the same channel, the IPTV provider will receive 5x more requests.
 
 ## Proxy service
 
-This service spawns a proxy server which is intended to be used for single Stalker account sharing between different STB boxes. Speaking about internals - STB boxes configured to use this service as Stalker portal will get fake (but expected) replies to authentication, watchdog and logoff requests, while being able to access all features of Stalker middleware with fake credentials as they are being rewritten on-the-fly.
+*Used for sharing single Staler portal credentials between multiple STB boxes.*
 
-**Note** this service will only proxy Stalker middleware communication requests (e.g. retrieving channels list), but not the actual video streams. Provider's servers that are serving the media will be accessed directly, exposing original viewer's source IP address.
+This service spawns a HTTP web server which is used as a Stalker portal in STB boxes. It forwards all the incoming requests from STB boxes to the real Stalker portal, but rewrites all the credentials and hardcoded parameters.
+
+How your current setup looks like:
+```
+[STB MAC:A] <--> [Stalker middleware]
+```
+
+How it would look if you use this service (it rewrites from MAC address `A` to expected address `B`):
+```
+[STB MAC:A] <--> [Stalkerhek MAC:B] <--> [Stalker middleware]
+```
+
+You are not limited to a single STB box anymore:
+```
+[STB MAC:A] <-->
+[STB MAC:B] <--> [Stalkerhek MAC:B] <--> [Stalker middleware]
+[STB MAC:C] <-->
+```
+
+**Note** this service will only proxy Stalker middleware communication requests (e.g. retrieving channels list), but not the actual video streams. Provider's servers that are serving the media will be accessed directly, exposing original viewer's source IP address as well as provider's server address.
 
 # Usage
 
 ## 1. Extract Stalker authorization details from STB box
-
-You can skip this step if you have below details already **and** you are sure that they are working.
 
 To extract all the authentication details, use wireshark to capture HTTP requests and analyse them by hand. I used **capture** filter `port 80 and tcp[((tcp[12:1] & 0xf0) >> 2):4] = 0x47455420` and **display** filter `http.request.method == GET`. You will likely want to use MITM attack using [arpspoof](https://www.irongeek.com/i.php?page=security/arpspoof). You will also need to restart TV box when capturing requests to see your TV box logging into stalker portal with stored authentication details. If you are smart/lucky enough, you can use port mirroring on your router and wireshark on the mirrored-to port. Anyway, you must capture the traffic in any way you can.
 
@@ -88,7 +105,7 @@ go run ./cmd/stalkerhek/main.go -help
 go run ./cmd/stalkerhek/main.go -config stalkerhek.yml
 ```
 
-## 4. Usage
+## 4. Using application
 
 ### HLS service
 
