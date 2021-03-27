@@ -10,6 +10,8 @@ import (
 	"time"
 )
 
+const userAgent = "Mozilla/5.0 (QtEmbedded; U; Linux; C) AppleWebKit/533.3 (KHTML, like Gecko) MAG200 stbapp ver: 4 rev: 2116 Mobile Safari/533.3"
+
 // ContentRequest represents HTTP request that is received from the user
 type ContentRequest struct {
 	Title   string

@@ -9,8 +9,6 @@ import (
 	"github.com/erkexzcx/stalkerhek/stalker"
 )
 
-var userAgent string
-
 // Start starts web server and serves playlist
 func Start(chs map[string]*stalker.Channel, bind string) {
 
