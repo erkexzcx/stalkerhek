@@ -126,7 +126,7 @@ func response(link string) (*http.Response, error) {
 	return nil, errors.New(link + " returned HTTP code " + strconv.Itoa(resp.StatusCode))
 }
 
-func addHeaders(from, to http.Header) {
+func addHeaders(from, to http.Header, contentLength bool) {
 	for k, v := range from {
 		switch k {
 		case "Connection":
@@ -140,7 +140,13 @@ func addHeaders(from, to http.Header) {
 		case "Date":
 			to.Set("Date", strings.Join(v, "; "))
 		case "Content-Length":
-			to.Set("Content-Length", strings.Join(v, "; "))
+			// This is only useful for unaltered media files. It should not be copied for M3U8 requests because
+			// players will not attempt to receive more bytes from HTTP server than are set here, therefore some M3U8
+			// contents would not load. E.g. CURL would display error "curl: (18) transfer closed with 83 bytes remaining to read"
+			// if set for M3U8 requests.
+			if contentLength {
+				to.Set("Content-Length", strings.Join(v, "; "))
+			}
 		}
 	}
 }

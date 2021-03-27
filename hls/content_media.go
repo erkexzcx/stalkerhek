@@ -18,7 +18,7 @@ func handleContentMedia(w http.ResponseWriter, r *http.Request, cr *ContentReque
 
 func handleEstablishedContentMedia(w http.ResponseWriter, r *http.Request, cr *ContentRequest, resp *http.Response) {
 	cr.Channel.Mux.Unlock() // So other clients can watch it too
-	addHeaders(resp.Header, w.Header())
+	addHeaders(resp.Header, w.Header(), true)
 	w.WriteHeader(resp.StatusCode)
 	io.Copy(w, resp.Body)
 	cr.Channel.Mux.Lock() // To prevent runtime error because we use 'defer' to unlock mux
