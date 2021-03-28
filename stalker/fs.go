@@ -11,6 +11,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+// Config contains configuration taken from the YAML file.
 type Config struct {
 	Portal *Portal `yaml:"portal"`
 	HLS    struct {
@@ -23,6 +24,7 @@ type Config struct {
 	} `yaml:"proxy"`
 }
 
+// Portal represents Stalker portal
 type Portal struct {
 	Model        string `yaml:"model"`
 	SerialNumber string `yaml:"serial_number"`
@@ -50,7 +52,7 @@ func ReadConfig(path *string) (*Config, error) {
 		return nil, err
 	}
 
-	if err = c.ValidateWithDefaults(); err != nil {
+	if err = c.validateWithDefaults(); err != nil {
 		return nil, err
 	}
 	return c, nil
@@ -59,7 +61,7 @@ func ReadConfig(path *string) (*Config, error) {
 var regexMAC = regexp.MustCompile(`^[A-F0-9]{2}:[A-F0-9]{2}:[A-F0-9]{2}:[A-F0-9]{2}:[A-F0-9]{2}:[A-F0-9]{2}$`)
 var regexTimezone = regexp.MustCompile(`^[a-zA-Z]+/[a-zA-Z]+$`)
 
-func (c *Config) ValidateWithDefaults() error {
+func (c *Config) validateWithDefaults() error {
 	c.Portal.MAC = strings.ToUpper(c.Portal.MAC)
 
 	if c.Portal.Model == "" {

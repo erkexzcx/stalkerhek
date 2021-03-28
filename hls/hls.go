@@ -12,6 +12,7 @@ import (
 var playlist map[string]*Channel
 var sortedChannels []string
 
+// Start starts main routine.
 func Start(chs map[string]*stalker.Channel, bind string) {
 	// Initialize playlist
 	playlist = make(map[string]*Channel)

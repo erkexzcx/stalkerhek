@@ -13,7 +13,7 @@ const (
 	linkTypeMedia   = 2
 )
 
-// Channel stores TV channel logo details.
+// Logo stores TV channel logo details.
 type Logo struct {
 	Mux              *sync.Mutex
 	Link             string // Link to channel's URL

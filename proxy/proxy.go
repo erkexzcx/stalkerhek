@@ -14,6 +14,7 @@ var (
 	portal      *stalker.Portal
 )
 
+// Start starts main routine.
 func Start(p *stalker.Portal, bind string) {
 	portal = p
 
