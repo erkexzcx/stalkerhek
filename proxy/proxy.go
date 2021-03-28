@@ -90,13 +90,13 @@ func requestHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Logoff
-	if tagAction == "???" {
+	if tagAction == "logout" {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`???`))
+		w.Write([]byte(`{"js":true,"text":"generated in: 0.011s; query counter: 4; cache hits: 0; cache miss: 0; php errors: 0; sql errors: 0;"}`))
 		return
 	}
 
-	// Rewrite
+	// Rewrite links
 	if config.Proxy.Rewrite && tagAction == "create_link" {
 		if tagCMD == "" {
 			log.Println("STB requested 'create_link', but did not give 'cmd' key in URL query...")
