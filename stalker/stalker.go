@@ -9,10 +9,6 @@ import (
 	"time"
 )
 
-var httpClient = &http.Client{
-	Timeout: 5 * time.Minute,
-}
-
 // Start connects to stalker portal, authenticates, starts watchdog etc.
 func (p *Portal) Start() error {
 	// Reserve token in Stalker portal
@@ -59,7 +55,7 @@ func (p *Portal) httpRequest(link string) ([]byte, error) {
 
 	req.Header.Set("Cookie", cookieText)
 
-	resp, err := httpClient.Do(req)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
