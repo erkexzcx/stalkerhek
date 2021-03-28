@@ -25,7 +25,7 @@ Note that there is no caching. if 5 devices are watching the same channel, the I
 
 ## Proxy service
 
-*Used for sharing single Staler portal credentials between multiple STB boxes.*
+*Used for sharing single Staler portal credentials between multiple STB boxes. It can also be used for centralized control of STB boxes.*
 
 This service spawns a HTTP web server which is used as a Stalker portal in STB boxes. It forwards all the incoming requests from STB boxes to the real Stalker portal, but on-the-fly rewrites all the credentials and hardcoded parameters.
 
