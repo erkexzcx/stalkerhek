@@ -13,8 +13,8 @@ func playlistHandler(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Fprintln(w, "#EXTM3U")
 	for _, title := range sortedChannels {
-		link := "http://" + r.Host + "/iptv/" + url.PathEscape(title)
-		logo := "http://" + r.Host + "/logo/" + url.PathEscape(title)
+		link := "/iptv/" + url.PathEscape(title)
+		logo := "/logo/" + url.PathEscape(title)
 
 		fmt.Fprintf(w, "#EXTINF:-1 tvg-logo=\"%s\" group-title=\"%s\", %s\n%s\n", logo, playlist[title].Genre, title, link)
 	}
