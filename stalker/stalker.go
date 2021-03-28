@@ -10,7 +10,7 @@ import (
 )
 
 var httpClient = &http.Client{
-	Timeout: time.Second * 10,
+	Timeout: 5 * time.Minute,
 }
 
 // Start connects to stalker portal, authenticates, starts watchdog etc.
