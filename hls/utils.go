@@ -7,68 +7,9 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"time"
 )
 
 const userAgent = "Mozilla/5.0 (QtEmbedded; U; Linux; C) AppleWebKit/533.3 (KHTML, like Gecko) MAG200 stbapp ver: 4 rev: 2116 Mobile Safari/533.3"
-
-// ContentRequest represents HTTP request that is received from the user
-type ContentRequest struct {
-	Title   string
-	Suffix  string
-	Channel *Channel
-}
-
-func getContentRequest(w http.ResponseWriter, r *http.Request, prefix string) (*ContentRequest, error) {
-	reqPath := strings.Replace(r.URL.RequestURI(), prefix, "", 1)
-	reqPathParts := strings.SplitN(reqPath, "/", 2)
-	if len(reqPathParts) == 0 {
-		return nil, errors.New("bad request")
-	}
-
-	// Unescape channel title
-	var err error
-	reqPathParts[0], err = url.PathUnescape(reqPathParts[0])
-	if err != nil {
-		return nil, err
-	}
-
-	// Find channel reference
-	channel, ok := playlist[reqPathParts[0]]
-	if !ok {
-		return nil, errors.New("bad request")
-	}
-
-	if len(reqPathParts) == 1 {
-		return &ContentRequest{reqPathParts[0], "", channel}, nil
-	}
-	return &ContentRequest{reqPathParts[0], reqPathParts[1], channel}, nil
-}
-
-func (cr *ContentRequest) validSession() bool {
-	// It's a wild guess that 30 seconds is enough. Might be different number...
-	if time.Since(cr.Channel.sessionUpdated).Seconds() > 30 || cr.Channel.sessionUpdated.IsZero() {
-		return false
-	}
-	return true
-}
-
-func (cr *ContentRequest) updateChannel() error {
-	newLink, err := cr.Channel.StalkerChannel.NewLink()
-	if err != nil {
-		return err
-	}
-
-	cr.Channel.LinkURL = newLink
-	cr.Channel.LinkType = 0
-	if cr.Channel.LinkM3u8Ref != nil {
-		cr.Channel.LinkM3u8Ref.link = ""
-		cr.Channel.LinkM3u8Ref.linkRoot = ""
-	}
-	cr.Channel.sessionUpdated = time.Now()
-
-	return nil
-}
 
 func download(link string) (content []byte, contentType string, err error) {
 	resp, err := response(link)
@@ -140,13 +81,25 @@ func addHeaders(from, to http.Header, contentLength bool) {
 		case "Date":
 			to.Set("Date", strings.Join(v, "; "))
 		case "Content-Length":
-			// This is only useful for unaltered media files. It should not be copied for M3U8 requests because
-			// players will not attempt to receive more bytes from HTTP server than are set here, therefore some M3U8
+			// This is only useful for unaltered media files. It should not be copied for HLS requests because
+			// players will not attempt to receive more bytes from HTTP server than are set here, therefore some HLS
 			// contents would not load. E.g. CURL would display error "curl: (18) transfer closed with 83 bytes remaining to read"
-			// if set for M3U8 requests.
+			// if set for HLS metadata requests.
 			if contentLength {
 				to.Set("Content-Length", strings.Join(v, "; "))
 			}
 		}
+	}
+}
+
+func getLinkType(contentType string) int {
+	contentType = strings.ToLower(contentType)
+	switch {
+	case contentType == "application/vnd.apple.mpegurl" || contentType == "application/x-mpegurl":
+		return linkTypeHLS
+	case strings.HasPrefix(contentType, "video/") || strings.HasPrefix(contentType, "audio/") || contentType == "application/octet-stream":
+		return linkTypeMedia
+	default:
+		return linkTypeMedia
 	}
 }

@@ -24,9 +24,7 @@ func Start(p *stalker.Portal, bind string) {
 	}
 	destination = link.Scheme + "://" + link.Host
 
-	// It's like separate web server's instance
 	mux := http.NewServeMux()
-
 	mux.HandleFunc("/", requestHandler)
 
 	log.Println("Proxy service should be started!")

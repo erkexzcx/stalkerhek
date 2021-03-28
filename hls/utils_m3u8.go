@@ -8,13 +8,6 @@ import (
 	"strings"
 )
 
-// M3U8Channel stores information about m3u8 channel
-type M3U8Channel struct {
-	Channel  *Channel
-	link     string
-	linkRoot string
-}
-
 func deleteAfterLastSlash(str string) string {
 	return str[0 : strings.LastIndex(str, "/")+1]
 }
