@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"net"
@@ -111,10 +112,10 @@ func requestHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// We must give full path to IPTV stream. Let's find out request's scheme and host:port
-		hostRequest, _, _ := net.SplitHostPort(r.URL.Host)
+		// We must give full path to IPTV stream.
+		requestHost, _, _ := net.SplitHostPort(r.Host)
 		_, portHLS, _ := net.SplitHostPort(config.HLS.Bind)
-		destination = r.URL.Scheme + "://" + hostRequest + ":" + portHLS + "/iptv/" + url.PathEscape(channel.Title)
+		destination = "http://" + requestHost + ":" + portHLS + "/iptv/" + url.PathEscape(channel.Title)
 
 		w.WriteHeader(http.StatusOK)
 
@@ -122,6 +123,7 @@ func requestHandler(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(responseText))
 
 		log.Println("Rewrote URL:", r.URL.String())
+		fmt.Println(responseText)
 
 		return
 	}
