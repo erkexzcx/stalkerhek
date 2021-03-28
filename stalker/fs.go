@@ -21,6 +21,7 @@ type Config struct {
 	Proxy struct {
 		Enabled bool   `yaml:"enabled"`
 		Bind    string `yaml:"bind"`
+		Rewrite bool   `yaml:"rewrite"`
 	} `yaml:"proxy"`
 }
 
@@ -108,6 +109,10 @@ func (c *Config) validateWithDefaults() error {
 
 	if c.Proxy.Enabled && c.Proxy.Bind == "" {
 		return errors.New("empty proxy bind")
+	}
+
+	if c.Proxy.Rewrite && !c.HLS.Enabled {
+		return errors.New("HLS service must be enabled for 'proxy: rewrite'")
 	}
 
 	if c.Portal.Token == "" {

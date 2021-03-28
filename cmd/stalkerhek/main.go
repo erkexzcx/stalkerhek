@@ -55,7 +55,7 @@ func main() {
 		wg.Add(1)
 		go func() {
 			log.Println("Starting proxy service...")
-			proxy.Start(c.Portal, c.Proxy.Bind)
+			proxy.Start(c, channels)
 			wg.Done()
 		}()
 	}
