@@ -1,6 +1,6 @@
 language: go
 go: 
- - 1.16.2
+ - 1.16.3
  - master
 
 script: go build -ldflags="-s -w" ./cmd/stalkerhek/main.go
