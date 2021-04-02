@@ -46,7 +46,9 @@ You are not limited to a single STB box anymore:
 [STB MAC:C] <-->
 ```
 
-**Note** this service will only proxy Stalker middleware communication requests (e.g. retrieving channels list), but not the actual video streams. Provider's servers that are serving the media will be accessed directly, exposing original viewer's source IP address as well as provider's server address.
+**Note**: this service will only proxy Stalker middleware communication requests (e.g. retrieving channels list), but not the actual video streams. Provider's servers that are serving the media will be accessed directly, exposing original viewer's source IP address as well as provider's server address.
+
+**Note 2**: For `proxy:rewrite` configuration option documentation, see [here](https://github.com/erkexzcx/stalkerhek/pull/12#issue-607960283).
 
 # Usage
 
@@ -81,6 +83,8 @@ Create configuration file as per below commands:
 cp stalkerhek.example.yml stalkerhek.yml
 vim stalkerhek.yml
 ```
+
+**Note**: For `proxy:rewrite` configuration option documentation, see [here](https://github.com/erkexzcx/stalkerhek/pull/12#issue-607960283).
 
 ## 3. Build application
 
