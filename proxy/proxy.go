@@ -82,6 +82,13 @@ func requestHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Log
+	if tagAction == "get_events" && tagType == "log" {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"js":1,"text":"generated in: 0.001s; query counter: 7; cache hits: 0; cache miss: 0; php errors: 0; sql errors: 0;"}`))
+		return
+	}
+
 	// Authentication
 	if tagAction == "do_auth" {
 		w.WriteHeader(http.StatusOK)
