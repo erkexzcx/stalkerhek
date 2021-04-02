@@ -9,11 +9,15 @@ import (
 
 // Channel stores information about channel in Stalker portal. This is not a real TV channel representation, but details on how to retrieve a working channel's URL.
 type Channel struct {
-	cmd     string             // channel's identifier in Stalker portal
-	logo    string             // Full URL to logo in Stalker portal
-	portal  *Portal            // Reference to portal from where this channel is taken from
-	genreID string             // Stores genre ID (category ID)
-	genres  *map[string]string // Stores mappings for genre ID -> genre title
+	Title    string             // Used for Proxy service to generate fake response to new URL request
+	CMD      string             // channel's identifier in Stalker portal
+	LogoLink string             // Link to logo
+	Portal   *Portal            // Reference to portal from where this channel is taken from
+	GenreID  string             // Stores genre ID (category ID)
+	Genres   *map[string]string // Stores mappings for genre ID -> genre title
+
+	CMD_ID    string // Used for Proxy service to generate fake response to new URL request
+	CMD_CH_ID string // Used for Proxy service to generate fake response to new URL request
 }
 
 // NewLink retrieves a link to the working channel. Retrieved link can be played in VLC or Kodi, but expires very soon if not being constantly opened (used).
@@ -25,8 +29,8 @@ func (c *Channel) NewLink() (string, error) {
 	}
 	var tmp tmpStruct
 
-	link := c.portal.Location + "?action=create_link&type=itv&cmd=" + url.PathEscape(c.cmd) + "&JsHttpRequest=1-xml"
-	content, err := c.portal.httpRequest(link)
+	link := c.Portal.Location + "?action=create_link&type=itv&cmd=" + url.PathEscape(c.CMD) + "&JsHttpRequest=1-xml"
+	content, err := c.Portal.httpRequest(link)
 	if err != nil {
 		return "", err
 	}
@@ -41,15 +45,15 @@ func (c *Channel) NewLink() (string, error) {
 
 // Logo returns full link to channel's logo
 func (c *Channel) Logo() string {
-	if c.logo == "" {
+	if c.LogoLink == "" {
 		return ""
 	}
-	return c.portal.Location + "misc/logos/320/" + c.logo // hardcoded path - fixme?
+	return c.Portal.Location + "misc/logos/320/" + c.LogoLink // hardcoded path - fixme?
 }
 
 // Genre returns a genre title
 func (c *Channel) Genre() string {
-	g, ok := (*c.genres)[c.genreID]
+	g, ok := (*c.Genres)[c.GenreID]
 	if !ok {
 		g = "Other"
 	}
@@ -61,10 +65,14 @@ func (p *Portal) RetrieveChannels() (map[string]*Channel, error) {
 	type tmpStruct struct {
 		Js struct {
 			Data []struct {
-				Name    string `json:"name"`
-				Cmd     string `json:"cmd"`
-				Logo    string `json:"logo"`
-				GenreID string `json:"tv_genre_id"`
+				Name    string `json:"name"`        // Title of channel
+				Cmd     string `json:"cmd"`         // Some sort of URL used to request channel real URL
+				Logo    string `json:"logo"`        // Link to logo
+				GenreID string `json:"tv_genre_id"` // Genre ID
+				CMDs    []struct {
+					ID    string `json:"id"`    // Used for Proxy service to generate fake response to new URL request
+					CH_ID string `json:"ch_id"` // Used for Proxy service to generate fake response to new URL request
+				} `json:"cmds"`
 			} `json:"data"`
 		} `json:"js"`
 	}
@@ -76,8 +84,7 @@ func (p *Portal) RetrieveChannels() (map[string]*Channel, error) {
 	}
 
 	if err := json.Unmarshal(content, &tmp); err != nil {
-		log.Println(string(content))
-		panic(err)
+		log.Fatalln(string(content))
 	}
 
 	genres, err := p.getGenres()
@@ -89,11 +96,14 @@ func (p *Portal) RetrieveChannels() (map[string]*Channel, error) {
 	channels := make(map[string]*Channel, len(tmp.Js.Data))
 	for _, v := range tmp.Js.Data {
 		channels[v.Name] = &Channel{
-			cmd:     v.Cmd,
-			logo:    v.Logo,
-			portal:  p,
-			genreID: v.GenreID,
-			genres:  &genres,
+			Title:     v.Name,
+			CMD:       v.Cmd,
+			LogoLink:  v.Logo,
+			Portal:    p,
+			GenreID:   v.GenreID,
+			Genres:    &genres,
+			CMD_CH_ID: v.CMDs[0].ID,
+			CMD_ID:    v.CMDs[0].CH_ID,
 		}
 	}
 

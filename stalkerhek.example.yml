@@ -18,3 +18,4 @@ hls:
 proxy:
   enabled: false
   bind: 0.0.0.0:8888
+  rewrite: false # EXPERIMENTAL - proxy IPTV streams through this application as well

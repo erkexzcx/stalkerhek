@@ -1,8 +1,10 @@
 package proxy
 
 import (
+	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
 
@@ -11,15 +13,25 @@ import (
 
 var (
 	destination string
-	portal      *stalker.Portal
+
+	config *stalker.Config
+
+	channels map[string]*stalker.Channel
 )
 
 // Start starts main routine.
-func Start(p *stalker.Portal, bind string) {
-	portal = p
+func Start(c *stalker.Config, chs map[string]*stalker.Channel) {
+	config = c
 
-	// extract scheme://hostname:port from given URL
-	link, err := url.Parse(p.Location)
+	// Channels will be matched by CMD field, not by title
+	newChannels := make(map[string]*stalker.Channel)
+	for _, v := range chs {
+		newChannels[v.CMD] = v
+	}
+	channels = newChannels
+
+	// extract scheme://hostname:port from given URL, so we don't have to do it later
+	link, err := url.Parse(config.Portal.Location)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -29,7 +41,7 @@ func Start(p *stalker.Portal, bind string) {
 	mux.HandleFunc("/", requestHandler)
 
 	log.Println("Proxy service should be started!")
-	panic(http.ListenAndServe(bind, mux))
+	panic(http.ListenAndServe(config.Proxy.Bind, mux))
 }
 
 func requestHandler(w http.ResponseWriter, r *http.Request) {
@@ -45,6 +57,11 @@ func requestHandler(w http.ResponseWriter, r *http.Request) {
 	var tagType string
 	if tmp, found := query["type"]; found {
 		tagType = tmp[0]
+	}
+
+	var tagCMD string
+	if tmp, found := query["cmd"]; found {
+		tagCMD = tmp[0]
 	}
 
 	// ################################################
@@ -72,10 +89,42 @@ func requestHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Logoff
-	if tagAction == "???" {
+	// Logout
+	if tagAction == "logout" {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`???`))
+		w.Write([]byte(`{"js":true,"text":"generated in: 0.011s; query counter: 4; cache hits: 0; cache miss: 0; php errors: 0; sql errors: 0;"}`))
+		return
+	}
+
+	// Rewrite links
+	if config.Proxy.Rewrite && tagAction == "create_link" {
+		if tagCMD == "" {
+			log.Println("STB requested 'create_link', but did not give 'cmd' key in URL query...")
+			http.Error(w, "bad request", http.StatusBadRequest)
+			return
+		}
+
+		// Find Stalker channel
+		channel, found := channels[tagCMD]
+		if !found {
+			log.Println("STB requested 'create_link', but gave invalid CMD:", tagCMD)
+			http.Error(w, "bad request", http.StatusBadRequest)
+			return
+		}
+
+		// We must give full path to IPTV stream.
+		requestHost, _, _ := net.SplitHostPort(r.Host)
+		_, portHLS, _ := net.SplitHostPort(config.HLS.Bind)
+		destination = "http://" + requestHost + ":" + portHLS + "/iptv/" + url.PathEscape(channel.Title)
+
+		w.WriteHeader(http.StatusOK)
+
+		responseText := generateNewChannelLink(destination, channel.CMD_ID, channel.CMD_CH_ID)
+		w.Write([]byte(responseText))
+
+		log.Println("Rewrote URL:", r.URL.String())
+		fmt.Println(responseText)
+
 		return
 	}
 
@@ -84,22 +133,22 @@ func requestHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Serial number
 	if _, exists := query["sn"]; exists {
-		query["sn"] = []string{portal.SerialNumber}
+		query["sn"] = []string{config.Portal.SerialNumber}
 	}
 
 	// Device ID
 	if _, exists := query["device_id"]; exists {
-		query["device_id"] = []string{portal.DeviceID}
+		query["device_id"] = []string{config.Portal.DeviceID}
 	}
 
 	// Device ID2
 	if _, exists := query["device_id2"]; exists {
-		query["device_id2"] = []string{portal.DeviceID2}
+		query["device_id2"] = []string{config.Portal.DeviceID2}
 	}
 
 	// Signature
 	if _, exists := query["signature"]; exists {
-		query["signature"] = []string{portal.Signature}
+		query["signature"] = []string{config.Portal.Signature}
 	}
 
 	// ################################################
