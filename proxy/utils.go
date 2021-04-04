@@ -44,5 +44,5 @@ func jsonEscape(i string) string {
 		panic(err)
 	}
 	s := string(b)
-	return s[1 : len(s)-1]
+	return strings.ReplaceAll(s[1:len(s)-1], "/", "\\/")
 }

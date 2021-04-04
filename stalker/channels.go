@@ -83,6 +83,9 @@ func (p *Portal) RetrieveChannels() (map[string]*Channel, error) {
 		return nil, err
 	}
 
+	// Dump json output to file
+	//ioutil.WriteFile("/tmp/dumpedchannels.json", content, 0644)
+
 	if err := json.Unmarshal(content, &tmp); err != nil {
 		log.Fatalln(string(content))
 	}

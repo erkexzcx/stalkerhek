@@ -128,7 +128,6 @@ func requestHandler(w http.ResponseWriter, r *http.Request) {
 		responseText := generateNewChannelLink(destination, channel.CMD_ID, channel.CMD_CH_ID)
 		w.Write([]byte(responseText))
 
-		log.Println("Rewrote URL:", r.URL.String())
 		fmt.Println(responseText)
 
 		return
