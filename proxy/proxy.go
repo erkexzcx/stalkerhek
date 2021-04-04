@@ -70,8 +70,7 @@ func requestHandler(w http.ResponseWriter, r *http.Request) {
 	// Handshake
 	if tagAction == "handshake" {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"js":{"token":"123456789012345678901234567890AF","random":"123456789012345678901234567890AF7890AFAA"},"text":"generated in: 0.001s; query counter: 1; cache hits: 0; cache miss: 0; php errors: 0; sql errors: 0;"}`))
-		// TODO - when given token is accepted by the server, message is different (shorter) and would be more applicable here.
+		w.Write([]byte(`{"js":{"token":"` + config.Portal.Token + `","random":"b8c4ef93de04e675350605eb0086bffe51507b88e6a1662e71fe9372"},"text":"generated in: 0.01s; query counter: 1; cache hits: 0; cache miss: 0; php errors: 0; sql errors: 0;"}`))
 		return
 	}
 
