@@ -81,9 +81,7 @@ func (c *Config) validateWithDefaults() error {
 		return errors.New("empty device_id2")
 	}
 
-	if c.Portal.Signature == "" {
-		return errors.New("empty signature")
-	}
+	// Signature can be empty and it's fine
 
 	if !regexMAC.MatchString(c.Portal.MAC) {
 		return errors.New("invalid MAC '" + c.Portal.MAC + "'")
