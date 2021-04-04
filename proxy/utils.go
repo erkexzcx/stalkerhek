@@ -1,7 +1,6 @@
 package proxy
 
 import (
-	"encoding/json"
 	"net/http"
 	"net/url"
 	"strings"
@@ -35,14 +34,10 @@ func addHeaders(from, to http.Header) {
 }
 
 func generateNewChannelLink(link, id, ch_id string) string {
-	return `{"js":{"id":"` + ch_id + `","cmd":"` + jsonEscape(link) + `","streamer_id":0,"link_id":` + id + `,"load":0,"error":""},"text":"array(6) {\n  [\"id\"]=>\n  string(4) \"` + ch_id + `\"\n  [\"cmd\"]=>\n  string(99) \"` + jsonEscape(link) + `\"\n  [\"streamer_id\"]=>\n  int(0)\n  [\"link_id\"]=>\n  int(` + id + `)\n  [\"load\"]=>\n  int(0)\n  [\"error\"]=>\n  string(0) \"\"\n}\ngenerated in: 0.01s; query counter: 8; cache hits: 0; cache miss: 0; php errors: 0; sql errors: 0;"}`
+	// "auto <channel>" might be replaced with just "<channel>". Testing needed here...
+	return `{"js":{"id":"` + ch_id + `","cmd":"auto ` + specialLinkEscape(link) + `","streamer_id":0,"link_id":` + id + `,"load":0,"error":""},"text":"array(6) {\n  [\"id\"]=>\n  string(4) \"` + ch_id + `\"\n  [\"cmd\"]=>\n  string(99) \"` + specialLinkEscape(link) + `\"\n  [\"streamer_id\"]=>\n  int(0)\n  [\"link_id\"]=>\n  int(` + id + `)\n  [\"load\"]=>\n  int(0)\n  [\"error\"]=>\n  string(0) \"\"\n}\ngenerated in: 0.01s; query counter: 8; cache hits: 0; cache miss: 0; php errors: 0; sql errors: 0;"}`
 }
 
-func jsonEscape(i string) string {
-	b, err := json.Marshal(i)
-	if err != nil {
-		panic(err)
-	}
-	s := string(b)
-	return strings.ReplaceAll(s[1:len(s)-1], "/", "\\/")
+func specialLinkEscape(i string) string {
+	return strings.ReplaceAll(i, "/", "\\/")
 }
