@@ -13,7 +13,7 @@ var playlist map[string]*Channel
 var sortedChannels []string
 
 // Start starts main routine.
-func Start(chs map[string]*stalker.Channel, bind string) {
+func Start(c *stalker.Config, chs map[string]*stalker.Channel) {
 	// Initialize playlist
 	playlist = make(map[string]*Channel)
 	sortedChannels = make([]string, 0, len(chs))
@@ -37,5 +37,5 @@ func Start(chs map[string]*stalker.Channel, bind string) {
 	mux.HandleFunc("/logo/", logoHandler)
 
 	log.Println("HLS service should be started!")
-	panic(http.ListenAndServe(bind, mux))
+	panic(http.ListenAndServe(c.HLS.Bind, mux))
 }

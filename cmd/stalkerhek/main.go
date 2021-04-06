@@ -46,7 +46,7 @@ func main() {
 		wg.Add(1)
 		go func() {
 			log.Println("Starting HLS service...")
-			hls.Start(channels, c.HLS.Bind)
+			hls.Start(c, channels)
 			wg.Done()
 		}()
 	}
