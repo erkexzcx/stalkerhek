@@ -74,3 +74,25 @@ func logoHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", logo.CacheContentType)
 	w.Write(logo.Cache)
 }
+
+// Handles '/generated/' requests
+func generatedHandler(w http.ResponseWriter, r *http.Request) {
+	cr, err := getContentRequest(w, r, "/generated/")
+	if err != nil {
+		http.Error(w, "invalid request", http.StatusBadRequest)
+		return
+	}
+
+	// Lock channel's mux
+	cr.ChannelRef.Mux.Lock()
+
+	// Keep track on channel access time
+	if err = cr.ChannelRef.validate(); err != nil {
+		cr.ChannelRef.Mux.Unlock()
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	// Handle content
+	handleContent(cr)
+}

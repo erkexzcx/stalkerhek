@@ -12,6 +12,9 @@ import (
 var playlist map[string]*Channel
 var sortedChannels []string
 
+type generatableChannel struct {
+}
+
 // Start starts main routine.
 func Start(c *stalker.Config, chs map[string]*stalker.Channel) {
 	// Initialize playlist
@@ -35,6 +38,8 @@ func Start(c *stalker.Config, chs map[string]*stalker.Channel) {
 	mux.HandleFunc("/iptv", playlistHandler)
 	mux.HandleFunc("/iptv/", channelHandler)
 	mux.HandleFunc("/logo/", logoHandler)
+
+	mux.HandleFunc("/generated/", generatedHandler)
 
 	log.Println("HLS service should be started!")
 	panic(http.ListenAndServe(c.HLS.Bind, mux))
