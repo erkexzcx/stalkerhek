@@ -46,7 +46,7 @@ func main() {
 		wg.Add(1)
 		go func() {
 			log.Println("Starting HLS service...")
-			hls.Start(c, channels)
+			hls.Start(c)
 			wg.Done()
 		}()
 	}
@@ -55,7 +55,7 @@ func main() {
 		wg.Add(1)
 		go func() {
 			log.Println("Starting proxy service...")
-			proxy.Start(c, channels)
+			proxy.Start(c)
 			wg.Done()
 		}()
 	}

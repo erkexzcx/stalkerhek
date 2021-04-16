@@ -8,21 +8,27 @@ import (
 
 // Handles '/iptv' requests
 func playlistHandler(w http.ResponseWriter, r *http.Request) {
+	PlaylistMux.RLock()
+	defer PlaylistMux.RUnlock()
+
 	w.Header().Set("Content-Type", "audio/x-mpegurl; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 
 	fmt.Fprintln(w, "#EXTM3U")
-	for _, title := range sortedChannels {
+	for _, title := range PlaylistSortedChannels {
 		link := "/iptv/" + url.PathEscape(title)
 		logo := "/logo/" + url.PathEscape(title)
 
-		fmt.Fprintf(w, "#EXTINF:-1 tvg-logo=\"%s\" group-title=\"%s\", %s\n%s\n", logo, playlist[title].Genre, title, link)
+		fmt.Fprintf(w, "#EXTINF:-1 tvg-logo=\"%s\" group-title=\"%s\", %s\n%s\n", logo, Playlist[title].Genre, title, link)
 	}
 }
 
 // Handles '/iptv/' requests
 func channelHandler(w http.ResponseWriter, r *http.Request) {
-	cr, err := getContentRequest(w, r, "/iptv/")
+	PlaylistMux.RLock()
+	defer PlaylistMux.RUnlock()
+
+	cr, err := getContentRequest(w, r, "/iptv/", true)
 	if err != nil {
 		http.Error(w, "invalid request", http.StatusBadRequest)
 		return
@@ -77,7 +83,7 @@ func logoHandler(w http.ResponseWriter, r *http.Request) {
 
 // Handles '/generated/' requests
 func generatedHandler(w http.ResponseWriter, r *http.Request) {
-	cr, err := getContentRequest(w, r, "/generated/")
+	cr, err := getContentRequest(w, r, "/generated/", false)
 	if err != nil {
 		http.Error(w, "invalid request", http.StatusBadRequest)
 		return

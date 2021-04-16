@@ -1,21 +1,35 @@
 portal:
+  # Update these fields
+  url: http://domain.example.com/stalker_portal/server/load.php
+  mac: 00:00:00:00:00:00
+  time_zone: Europe/Vilnius
+  
+  # Leave these fields empty if no credentials
+  username: myusername
+  password: mypassword
+  
+  # Update these fields or leave (some of them) empty if required
   model: MAG254
+  signature: ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
   serial_number: 0000000000000
   device_id: ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
   device_id2: ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
-  signature: ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
-  mac: 00:00:00:00:00:00
-  username: myusername # Delete this line if no credentials
-  password: mypassword # Delete this line if no credentials
-  url: http://domain.example.com/stalker_portal/server/load.php
-  time_zone: Europe/Vilnius
   token: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
+# HLS service configuration
 hls:
   enabled: false
   bind: 0.0.0.0:9999
 
+# Proxy service configuration
 proxy:
   enabled: false
   bind: 0.0.0.0:8888
-  rewrite: false # EXPERIMENTAL! see https://github.com/erkexzcx/stalkerhek/pull/12#issue-607960283
+
+  # Rewrite links so all the traffic is routed through Stalkerhek. See
+  # https://github.com/erkexzcx/stalkerhek/wiki/Services#proxy-service for more info
+  rewrite: false
+  
+  # If hosted under proxy/NAT, enter public "host:port" pair of HLS service
+  # If empty, it uses "Host" value from incoming request header and the port of HLS service
+  rewrite_to: 

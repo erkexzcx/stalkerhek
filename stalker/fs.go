@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"math/rand"
+	"net"
 	"regexp"
 	"strings"
 
@@ -19,9 +20,10 @@ type Config struct {
 		Bind    string `yaml:"bind"`
 	} `yaml:"hls"`
 	Proxy struct {
-		Enabled bool   `yaml:"enabled"`
-		Bind    string `yaml:"bind"`
-		Rewrite bool   `yaml:"rewrite"`
+		Enabled   bool   `yaml:"enabled"`
+		Bind      string `yaml:"bind"`
+		Rewrite   bool   `yaml:"rewrite"`
+		RewriteTo string `yaml:"rewrite_to"`
 	} `yaml:"proxy"`
 }
 
@@ -109,8 +111,14 @@ func (c *Config) validateWithDefaults() error {
 		return errors.New("empty proxy bind")
 	}
 
-	if c.Proxy.Rewrite && !c.HLS.Enabled {
-		return errors.New("HLS service must be enabled for 'proxy: rewrite'")
+	if c.Proxy.Rewrite {
+		if !c.HLS.Enabled {
+			return errors.New("HLS service must be enabled for 'proxy: rewrite'")
+		}
+
+		if _, _, err := net.SplitHostPort(c.Proxy.RewriteTo); err != nil {
+			return errors.New("invalid 'proxy: rewrite_to' value")
+		}
 	}
 
 	if c.Portal.Token == "" {
