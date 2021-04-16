@@ -9,9 +9,9 @@ import (
 )
 
 func handleContent(cr *ContentRequest) {
-	linkType := cr.ChannelRef.LinkType
+	linkType := cr.ChannelRef.ContentType
 
-	if linkType == linkTypeUnknown {
+	if linkType == contentTypeUnknown {
 		handleContentUnknown(cr)
 		return
 	}
@@ -22,9 +22,9 @@ func handleContent(cr *ContentRequest) {
 	cr.ChannelRef.Mux.Unlock()
 
 	switch linkType {
-	case linkTypeHLS:
+	case contentTypeHLS:
 		handleContentHLS(cr)
-	case linkTypeMedia:
+	case contentTypeMedia:
 		handleContentMedia(cr)
 	default:
 		http.Error(cr.ResponseWriter, "invalid media type", http.StatusInternalServerError)
@@ -42,9 +42,9 @@ func handleContentUnknown(cr *ContentRequest) {
 	}
 	defer resp.Body.Close()
 
-	cr.ChannelRef.LinkType = getLinkType(resp.Header.Get("Content-Type"))
+	cr.ChannelRef.ContentType = getLinkType(resp.Header.Get("Content-Type"))
 
-	if cr.ChannelRef.LinkType == linkTypeHLS {
+	if cr.ChannelRef.ContentType == contentTypeHLS {
 		// Initiate new HLS channel
 		cr.ChannelRef.HLSLink = resp.Request.URL.String()
 		cr.ChannelRef.HLSLinkRoot = deleteAfterLastSlash(cr.ChannelRef.HLSLink)

@@ -96,10 +96,10 @@ func getLinkType(contentType string) int {
 	contentType = strings.ToLower(contentType)
 	switch {
 	case contentType == "application/vnd.apple.mpegurl" || contentType == "application/x-mpegurl":
-		return linkTypeHLS
+		return contentTypeHLS
 	case strings.HasPrefix(contentType, "video/") || strings.HasPrefix(contentType, "audio/") || contentType == "application/octet-stream":
-		return linkTypeMedia
+		return contentTypeMedia
 	default:
-		return linkTypeMedia
+		return contentTypeMedia
 	}
 }

@@ -8,9 +8,9 @@ import (
 )
 
 const (
-	linkTypeUnknown = 0 // default
-	linkTypeHLS     = 1
-	linkTypeMedia   = 2
+	contentTypeUnknown = 0 // default
+	contentTypeHLS     = 1
+	contentTypeMedia   = 2
 )
 
 // Logo stores TV channel logo details.
@@ -27,8 +27,8 @@ type Channel struct {
 
 	Mux *sync.Mutex // Mux for channel.
 
-	Link     string // Original link, retrieved from Stalkerhek middleware
-	LinkType int    // Original link's type
+	Link        string // Original link, retrieved from Stalkerhek middleware
+	ContentType int    // Original link's content type, e.g. HLS, MP4...
 
 	HLSLink     string // Updated HLS TV channel's link
 	HLSLinkRoot string // Used for HLS relative paths
@@ -48,7 +48,7 @@ func (c *Channel) validate() error {
 		}
 
 		c.Link = newLink
-		c.LinkType = 0
+		c.ContentType = 0
 	}
 
 	c.lastAccess = time.Now()
@@ -62,7 +62,7 @@ func (c *Channel) isValid() bool {
 	}
 
 	// 30 seconds timout for HLS content
-	if c.LinkType == linkTypeHLS {
+	if c.ContentType == contentTypeHLS {
 		return time.Since(c.lastAccess).Seconds() <= 30
 	}
 

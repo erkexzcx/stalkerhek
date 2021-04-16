@@ -92,17 +92,17 @@ func requestHandler(w http.ResponseWriter, r *http.Request) {
 		keyType := simplifiedQuery["type"]
 
 		if keyType == "itv" {
-			handleRewriteITV(w, r, simplifiedQuery)
+			handleRewriteITV(w, r, simplifiedQuery["cmd"])
 			return
 		}
 
 		// if keyType == "tv_archive" {
-		// 	handleRewriteITV(w, r, simplifiedQuery)
+		// 	handleRewriteITV(w, r, simplifiedQuery["cmd"])
 		// 	return
 		// }
 
 		// if keyType == "vod" {
-		// 	handleRewriteITV(w, r, simplifiedQuery)
+		// 	handleRewriteITV(w, r, simplifiedQuery["cmd"])
 		// 	return
 		// }
 	}
