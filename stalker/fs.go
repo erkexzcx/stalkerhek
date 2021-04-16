@@ -116,7 +116,8 @@ func (c *Config) validateWithDefaults() error {
 			return errors.New("HLS service must be enabled for 'proxy: rewrite'")
 		}
 
-		if _, _, err := net.SplitHostPort(c.Proxy.RewriteTo); err != nil {
+		_, _, err := net.SplitHostPort(c.Proxy.RewriteTo)
+		if c.Proxy.RewriteTo != "" && err != nil {
 			return errors.New("invalid 'proxy: rewrite_to' value")
 		}
 	}
