@@ -38,7 +38,7 @@ func getContentRequest(w http.ResponseWriter, r *http.Request, expectedPrefix st
 		return nil, err
 	}
 
-	// If ITV (/iptv/) request
+	/* If ITV (/iptv/) request */
 	if itvRequest {
 		// Find channel reference
 		channelRef, ok := Playlist[reqPathParts[0]]
@@ -67,5 +67,30 @@ func getContentRequest(w http.ResponseWriter, r *http.Request, expectedPrefix st
 		}, nil
 	}
 
-	// If something else (/generated/) request
+	/* If something else (/generated/) request */
+	// Find channel reference
+	channelRef, ok := GeneratedPlaylist[reqPathParts[0]]
+	if !ok {
+		return nil, errors.New("bad request")
+	}
+
+	// /generated/<hash>
+	if len(reqPathParts) == 1 {
+		return &ContentRequest{
+			ResponseWriter: w,
+			Request:        r,
+			Title:          reqPathParts[0],
+			Suffix:         "",
+			ChannelRef:     channelRef,
+		}, nil
+	}
+
+	// /generated/<hash>/<something_more>
+	return &ContentRequest{
+		ResponseWriter: w,
+		Request:        r,
+		Title:          reqPathParts[0],
+		Suffix:         reqPathParts[1],
+		ChannelRef:     channelRef,
+	}, nil
 }

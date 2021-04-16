@@ -50,7 +50,7 @@ func channelHandler(w http.ResponseWriter, r *http.Request) {
 
 // Handles '/logo/' requests
 func logoHandler(w http.ResponseWriter, r *http.Request) {
-	cr, err := getContentRequest(w, r, "/logo/")
+	cr, err := getContentRequest(w, r, "/logo/", true)
 	if err != nil {
 		http.Error(w, "invalid request", http.StatusBadRequest)
 		return

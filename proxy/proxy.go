@@ -11,22 +11,12 @@ import (
 
 var destination string
 var config *stalker.Config
-var channels map[string]*stalker.Channel
 
 // Start starts main routine.
-func Start(c *stalker.Config, chs map[string]*stalker.Channel) {
+func Start(c *stalker.Config) {
 	config = c
 
-	// TODO - rework channels list mechanism
-
-	// Channels will be matched by CMD field, not by title
-	newChannels := make(map[string]*stalker.Channel)
-	for _, v := range chs {
-		newChannels[v.CMD] = v
-	}
-	channels = newChannels
-
-	// extract scheme://hostname:port from given URL, so we don't have to do it later
+	// extract scheme://hostname:port from given URL, so we don't have to do that later
 	link, err := url.Parse(config.Portal.Location)
 	if err != nil {
 		log.Fatalln(err)
@@ -97,6 +87,7 @@ func requestHandler(w http.ResponseWriter, r *http.Request) {
 
 	// ################################################
 
+	// If 'rewrite' option is enabled
 	if config.Proxy.Rewrite && keyAction == "create_link" {
 		keyType := simplifiedQuery["type"]
 
@@ -105,15 +96,15 @@ func requestHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if keyType == "tv_archive" {
-			handleRewriteITV(w, r, simplifiedQuery)
-			return
-		}
+		// if keyType == "tv_archive" {
+		// 	handleRewriteITV(w, r, simplifiedQuery)
+		// 	return
+		// }
 
-		if keyType == "vod" {
-			handleRewriteITV(w, r, simplifiedQuery)
-			return
-		}
+		// if keyType == "vod" {
+		// 	handleRewriteITV(w, r, simplifiedQuery)
+		// 	return
+		// }
 	}
 
 	// ################################################
@@ -139,7 +130,6 @@ func requestHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// ################################################
-	// Proxy modified request to real Stalker portal and return the response
 
 	// Build (modified) URL
 	finalLink := destination + r.URL.Path

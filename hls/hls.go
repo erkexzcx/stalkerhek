@@ -12,9 +12,10 @@ import (
 
 var stalkerConfig *stalker.Config
 
-var Playlist = make(map[string]*Channel)
-var PlaylistSortedChannels = make([]string, 0)
-var PlaylistMux = sync.RWMutex{} // Used to freeze all clients until playlist is updated
+var Playlist = make(map[string]*Channel)       // Simple playlist, searchable by ITV title
+var PlaylistCMD = make(map[string]*Channel)    // Same as simple playlist, but searchable by ITV CMD string
+var PlaylistSortedChannels = make([]string, 0) // Sorted titles list of simple playlist
+var PlaylistMux = sync.RWMutex{}               // Used to freeze all clients until playlist is updated
 
 // Start starts main routine.
 func Start(c *stalker.Config) {
@@ -24,7 +25,7 @@ func Start(c *stalker.Config) {
 	updateITVPlaylist()
 
 	// Refresh ITV channels every 24 hours
-	go func(){
+	go func() {
 		for {
 			time.Sleep(24 * time.Hour)
 			PlaylistMux.Lock()
@@ -67,7 +68,7 @@ func updateITVPlaylist() {
 			continue
 		}
 		if len(channels) == 0 {
-			log.Printf("Attempt %d/3: failed to retrieve channels list (no channels returned)\n", i+1)\
+			log.Printf("Attempt %d/3: failed to retrieve channels list (no channels returned)\n", i+1)
 			time.Sleep(time.Second)
 			continue
 		}
@@ -81,7 +82,7 @@ func updateITVPlaylist() {
 	}
 
 	for k, v := range channels {
-		Playlist[k] = &Channel{
+		tmpChannel := &Channel{
 			StalkerChannel: v,
 			Mux:            &sync.Mutex{},
 			Logo: &Logo{
@@ -90,6 +91,10 @@ func updateITVPlaylist() {
 			},
 			Genre: v.Genre(),
 		}
+
+		Playlist[k] = tmpChannel
+		PlaylistCMD[v.CMD] = tmpChannel
+
 		PlaylistSortedChannels = append(PlaylistSortedChannels, k)
 	}
 	sort.Strings(PlaylistSortedChannels)

@@ -6,6 +6,8 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+
+	"github.com/erkexzcx/stalkerhek/hls"
 )
 
 func generateITVResponse(link, id, ch_id string) string {
@@ -13,33 +15,29 @@ func generateITVResponse(link, id, ch_id string) string {
 }
 
 func handleRewriteITV(w http.ResponseWriter, r *http.Request, simplifiedQuery map[string]string) {
-	keyCMD := simplifiedQuery["cmd"]
+	hls.PlaylistMux.RLock()
+	defer hls.PlaylistMux.RUnlock()
 
-	// Find Stalker channel
-	channel, found := channels[keyCMD]
+	keyCMD := simplifiedQuery["cmd"]
+	channel, found := hls.PlaylistCMD[keyCMD]
 	if !found {
-		log.Println("STB requested 'create_link', but gave invalid CMD:", keyCMD)
+		log.Println("STB requested 'create_link' of type 'itv', but gave invalid CMD string:", keyCMD)
 		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
 
-	// We must give full path to IPTV stream.
+	// Must give full path to IPTV stream
 	destinationHost := config.Proxy.RewriteTo
 	if config.Proxy.RewriteTo != "" {
 		requestHost, _, _ := net.SplitHostPort(r.Host)
 		_, portHLS, _ := net.SplitHostPort(config.HLS.Bind)
 		destinationHost = requestHost + ":" + portHLS
 	}
-	destination = "http://" + destinationHost + "/iptv/" + url.PathEscape(channel.Title)
+	destination = "http://" + destinationHost + "/iptv/" + url.PathEscape(channel.StalkerChannel.Title)
 
-	responseText := generateITVResponse(destination, channel.CMD_ID, channel.CMD_CH_ID)
+	responseText := generateITVResponse(destination, channel.StalkerChannel.CMD_ID, channel.StalkerChannel.CMD_CH_ID)
 	fmt.Println(responseText)
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(responseText))
-}
-
-func handleRewriteTVArchive(w http.ResponseWriter, r *http.Request, simplifiedQuery map[string]string) {
-	keyCMD := simplifiedQuery["cmd"]
-
 }
