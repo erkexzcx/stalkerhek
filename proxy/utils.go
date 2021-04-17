@@ -1,7 +1,8 @@
 package proxy
 
 import (
-	"hash/fnv"
+	"crypto/rand"
+	"encoding/hex"
 	"net/http"
 	"net/url"
 	"strings"
@@ -34,12 +35,10 @@ func addHeaders(from, to http.Header) {
 	}
 }
 
-func specialLinkEscape(i string) string {
-	return strings.ReplaceAll(i, "/", "\\/")
-}
-
-func stringToHash(s string) string {
-	hash := fnv.New64a()
-	hash.Write([]byte(s))
-	return string(hash.Sum64())
+func generateHash(length int) string {
+	b := make([]byte, length)
+	if _, err := rand.Read(b); err != nil {
+		return ""
+	}
+	return hex.EncodeToString(b)
 }

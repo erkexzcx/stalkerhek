@@ -1,6 +1,7 @@
 package hls
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"sort"
@@ -10,44 +11,39 @@ import (
 	"github.com/erkexzcx/stalkerhek/stalker"
 )
 
-var stalkerConfig *stalker.Config
+var config *stalker.Config
 
-var Playlist = make(map[string]*Channel)       // Simple playlist, searchable by ITV title
-var PlaylistCMD = make(map[string]*Channel)    // Same as simple playlist, but searchable by ITV CMD string
-var PlaylistSortedChannels = make([]string, 0) // Sorted titles list of simple playlist
-var PlaylistMux = sync.RWMutex{}               // Used to freeze all clients until playlist is updated
+var Playlist = make(map[string]*Stream) // Main HLS playlist, searchable by IPTV channel title
+var PlaylistMux = sync.RWMutex{}        // Used to freeze all clients until playlist is updated
+var playlistSorted []string             // Sorted titles list of simple playlist
+var PlaylistCMD2Title = make(map[string]string)
 
 // Start starts main routine.
 func Start(c *stalker.Config) {
-	stalkerConfig = c
+	config = c
 
 	// Generate once
-	updateITVPlaylist()
+	updatePlaylist(3)
 
-	// Refresh ITV channels every 24 hours
+	// Regularily refresh ITV channels
 	go func() {
 		for {
 			time.Sleep(24 * time.Hour)
-			PlaylistMux.Lock()
-			updateITVPlaylist()
-			PlaylistMux.Unlock()
+			updatePlaylist(3)
 		}
 	}()
 
-	// // Every 1 hour clear old and no longer usable generated "channels" by Proxy service
-	// go func(){
-	// 	for {
-	// 		time.Sleep(time.Hour)
-	// 		generatedPlaylistMux.Lock()
-	// 		cleanupGeneratedPlaylist()
-	// 		generatedPlaylistMux.Unlock()
-	// 	}
-	// }()
+	// Regularily cleanup 'GeneratedPlaylist'
+	go func() {
+		for {
+			time.Sleep(15 * time.Minute)
+			cleanupGeneratedPlaylist()
+		}
+	}()
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/iptv", playlistHandler)
 	mux.HandleFunc("/iptv/", channelHandler)
-	mux.HandleFunc("/logo/", logoHandler)
 	mux.HandleFunc("/generated/", generatedHandler)
 
 	log.Println("HLS service should be started!")
@@ -55,47 +51,59 @@ func Start(c *stalker.Config) {
 }
 
 // This function initiates playlist
-func updateITVPlaylist() {
-	var channels map[string]*stalker.Channel
-	var err error
+func updatePlaylist(counter int) {
+	PlaylistMux.Lock()
+	defer PlaylistMux.Unlock()
 
-	var allGood bool
-	for i := 0; i < 3; i++ {
-		channels, err = stalkerConfig.Portal.RetrieveChannels()
-		if err != nil {
-			log.Printf("Attempt %d/3: failed to retrieve channels list (%s)\n", i+1, err.Error())
-			time.Sleep(time.Second)
+	itvs := config.Portal.RetrieveListOfITVs()
+	fmt.Println(*itvs[0])
+
+	if len(itvs) == 0 {
+		if counter <= 0 {
+			log.Fatalln("failed to update ITV list (HLS playlist) - no ITVs returned")
+		} else {
+			updatePlaylist(counter - 1)
+			return
+		}
+	}
+
+	newPlaylistSorted := make([]string, 0, len(itvs))
+
+	// Check what exists in new returned ITVs list and does not exist in playlist
+	for _, itv := range itvs {
+		newPlaylistSorted = append(newPlaylistSorted, itv.Title)
+		PlaylistCMD2Title[itv.CMDString] = itv.Title
+
+		_, found := Playlist[itv.Title]
+		if !found {
+			Playlist[itv.Title] = &Stream{
+				StalkerStream: itv,
+				Mux:           &sync.Mutex{},
+				Title:         itv.Title,
+			}
 			continue
 		}
-		if len(channels) == 0 {
-			log.Printf("Attempt %d/3: failed to retrieve channels list (no channels returned)\n", i+1)
-			time.Sleep(time.Second)
+	}
+
+	// Now check what does not exist in returned ITVs list that exists in playlist
+	for k, v := range Playlist {
+
+		found := false
+		for _, itv := range itvs {
+			if k == itv.Title {
+				found = true
+				break
+			}
+		}
+
+		if found {
 			continue
 		}
-		allGood = true
-		break
+
+		delete(Playlist, k)
+		delete(PlaylistCMD2Title, v.StalkerStream.CMD())
 	}
 
-	if !allGood {
-		// TODO - is there anything else we can do?
-		log.Fatalln("failed to retrieve channels list from Stalker portal")
-	}
-
-	for k, v := range channels {
-		tmpChannel := &Channel{
-			StalkerChannel: v,
-			Mux:            &sync.Mutex{},
-			Logo: &Logo{
-				Mux:  &sync.Mutex{},
-				Link: v.Logo(),
-			},
-			Genre: v.Genre(),
-		}
-
-		Playlist[k] = tmpChannel
-		PlaylistCMD[v.CMD] = tmpChannel
-
-		PlaylistSortedChannels = append(PlaylistSortedChannels, k)
-	}
-	sort.Strings(PlaylistSortedChannels)
+	sort.Strings(newPlaylistSorted)
+	playlistSorted = newPlaylistSorted
 }

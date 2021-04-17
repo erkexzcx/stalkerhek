@@ -17,10 +17,10 @@ type ContentRequest struct {
 	ITVType    bool
 	Title      string
 	Suffix     string
-	ChannelRef *Channel
+	ChannelRef *Stream
 
 	// Used to store value of the *Channel, so no synchronization is required
-	Channel Channel
+	Channel Stream
 }
 
 // Returns ContentRequest objected that contains HTTP request, its responseWriter and TV channel reference.

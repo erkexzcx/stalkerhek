@@ -30,16 +30,6 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	// Retrieve channels list.
-	log.Println("Retrieving channels list from Stalker middleware...")
-	channels, err := c.Portal.RetrieveChannels()
-	if err != nil {
-		log.Fatalln(err)
-	}
-	if len(channels) == 0 {
-		log.Fatalln("no IPTV channels retrieved from Stalker middleware. quitting...")
-	}
-
 	var wg sync.WaitGroup
 
 	if c.HLS.Enabled {

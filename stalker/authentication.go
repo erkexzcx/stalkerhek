@@ -60,7 +60,7 @@ func (p *Portal) authenticate() (err error) {
 	}
 	var tmp tmpStruct
 
-	content, err := p.httpRequest(p.Location + "?type=stb&action=do_auth&login=" + p.Username + "&password=" + p.Password + "&device_id=" + p.DeviceID + "&device_id2=" + p.DeviceID2 + "&JsHttpRequest=1-xml")
+	content, err := p.request(p.Location+"?type=stb&action=do_auth&login="+p.Username+"&password="+p.Password+"&device_id="+p.DeviceID+"&device_id2="+p.DeviceID2+"&JsHttpRequest=1-xml", 3)
 	if err != nil {
 		log.Println("HTTP authentication request failed")
 		return err

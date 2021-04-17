@@ -2,7 +2,6 @@ package hls
 
 import (
 	"errors"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -10,16 +9,6 @@ import (
 )
 
 const userAgent = "Mozilla/5.0 (QtEmbedded; U; Linux; C) AppleWebKit/533.3 (KHTML, like Gecko) MAG200 stbapp ver: 4 rev: 2116 Mobile Safari/533.3"
-
-func download(link string) (content []byte, contentType string, err error) {
-	resp, err := response(link)
-	if err != nil {
-		return nil, "", err
-	}
-	defer resp.Body.Close()
-	content, err = ioutil.ReadAll(resp.Body)
-	return content, resp.Header.Get("Content-Type"), err
-}
 
 // This Golang's HTTP client will not follow redirects.
 //
