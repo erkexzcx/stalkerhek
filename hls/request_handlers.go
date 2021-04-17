@@ -48,6 +48,9 @@ func channelHandler(w http.ResponseWriter, r *http.Request) {
 
 // Handles '/generated/' requests
 func generatedHandler(w http.ResponseWriter, r *http.Request) {
+	GeneratedPlaylistMux.RLock()
+	defer GeneratedPlaylistMux.RUnlock()
+
 	cr, err := getContentRequest(w, r, "/generated/", false)
 	if err != nil {
 		http.Error(w, "invalid request", http.StatusBadRequest)

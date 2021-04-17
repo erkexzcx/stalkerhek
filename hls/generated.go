@@ -2,32 +2,23 @@ package hls
 
 import (
 	"sync"
+
+	"github.com/erkexzcx/stalkerhek/stalker"
 )
 
 var GeneratedPlaylist = make(map[string]*Stream)
 var GeneratedPlaylistMux = sync.RWMutex{} // Used to freeze all clients until playlist is updated
 
-func NewGeneratedStream(title string, s Stream) {
+func NewGeneratedStream(title string, s stalker.Stream) {
 	GeneratedPlaylistMux.Lock()
 	defer GeneratedPlaylistMux.Unlock()
 
+	stream := &Stream{
+		StalkerStream: s,
+		Mux:           &sync.Mutex{},
+	}
+	GeneratedPlaylist[title] = stream
 }
-
-// func Generate(cmdHash, requestType string) {
-// 	GeneratedPlaylistMux.Lock()
-// 	defer GeneratedPlaylistMux.Unlock()
-
-// 	// Generate random hash
-// 	p, _ := rand.Prime(rand.Reader, 64)
-// 	randomHash := p.String()
-
-// 	// Create new channel
-// 	GeneratedPlaylist[randomHash] = &Stream{
-// 		StalkerStream: v,
-// 		Mux:           &sync.Mutex{},
-// 		LinkType:      requestType,
-// 	}
-// }
 
 func cleanupGeneratedPlaylist() {
 	GeneratedPlaylistMux.Lock()

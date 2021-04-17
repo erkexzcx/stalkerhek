@@ -39,30 +39,8 @@ func handleRewriteITV(w http.ResponseWriter, r *http.Request, keyCMD string) {
 	w.Write([]byte(responseText))
 }
 
-// func handleRewriteTVArchive(w http.ResponseWriter, r *http.Request, keyCMD string) {
-// 	randomHash := generateHash(32)
+func handleRewriteTVArchive(w http.ResponseWriter, r *http.Request, keyCMD string) {
+	randomHash := generateHash(32)
+	hls.NewGeneratedStream(randomHash, &TVArchive{})
 
-// 	hls.Generate(randomHash)
-
-// 	channel, found := hls.PlaylistCMD[keyCMD]
-// 	if !found {
-// 		log.Println("STB requested 'create_link' of type 'itv', but gave invalid CMD string:", keyCMD)
-// 		http.Error(w, "bad request", http.StatusBadRequest)
-// 		return
-// 	}
-
-// 	// Must give full path to IPTV stream
-// 	destinationHost := config.Proxy.RewriteTo
-// 	if config.Proxy.RewriteTo != "" {
-// 		requestHost, _, _ := net.SplitHostPort(r.Host)
-// 		_, portHLS, _ := net.SplitHostPort(config.HLS.Bind)
-// 		destinationHost = requestHost + ":" + portHLS
-// 	}
-// 	destination = "http://" + destinationHost + "/iptv/" + url.PathEscape(channel.StalkerChannel.Title)
-
-// 	responseText := generateITVResponse(destination, channel.StalkerChannel.CMD_ID, channel.StalkerChannel.CMD_CH_ID)
-// 	fmt.Println(responseText)
-
-// 	w.WriteHeader(http.StatusOK)
-// 	w.Write([]byte(responseText))
-// }
+}
