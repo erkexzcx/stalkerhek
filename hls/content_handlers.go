@@ -3,6 +3,7 @@ package hls
 import (
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -38,6 +39,7 @@ func handleContentUnknown(cr *ContentRequest) {
 	if err != nil {
 		cr.ChannelRef.Mux.Unlock()
 		http.Error(cr.ResponseWriter, "internal server error", http.StatusInternalServerError)
+		log.Println(err)
 		return
 	}
 	defer resp.Body.Close()
@@ -66,6 +68,7 @@ func handleContentHLS(cr *ContentRequest) {
 	resp, err := response(link)
 	if err != nil {
 		http.Error(cr.ResponseWriter, "internal server error", http.StatusInternalServerError)
+		log.Println(err)
 		return
 	}
 	defer resp.Body.Close()
@@ -94,6 +97,7 @@ func handleContentMedia(cr *ContentRequest) {
 	resp, err := response(cr.Channel.Link)
 	if err != nil {
 		http.Error(cr.ResponseWriter, "internal server error", http.StatusInternalServerError)
+		log.Println(err)
 		return
 	}
 	defer resp.Body.Close()

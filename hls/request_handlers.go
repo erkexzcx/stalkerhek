@@ -2,6 +2,7 @@ package hls
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 )
@@ -35,6 +36,7 @@ func channelHandler(w http.ResponseWriter, r *http.Request) {
 	if err = cr.ChannelRef.validate(); err != nil {
 		cr.ChannelRef.Mux.Unlock()
 		http.Error(w, "internal server error", http.StatusInternalServerError)
+		log.Println(err)
 		return
 	}
 
@@ -59,6 +61,7 @@ func logoHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			cr.ChannelRef.Logo.Mux.Unlock()
 			http.Error(w, "internal server error", http.StatusInternalServerError)
+			log.Println(err)
 			return
 		}
 		cr.ChannelRef.Logo.Cache = img
