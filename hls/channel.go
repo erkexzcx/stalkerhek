@@ -42,7 +42,7 @@ type Channel struct {
 
 func (c *Channel) validate() error {
 	if !c.isValid() {
-		newLink, err := c.StalkerChannel.NewLink()
+		newLink, err := c.StalkerChannel.NewLink(false)
 		if err != nil {
 			return err
 		}

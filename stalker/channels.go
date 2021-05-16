@@ -21,7 +21,7 @@ type Channel struct {
 }
 
 // NewLink retrieves a link to the working channel. Retrieved link can be played in VLC or Kodi, but expires very soon if not being constantly opened (used).
-func (c *Channel) NewLink() (string, error) {
+func (c *Channel) NewLink(retry bool) (string, error) {
 	type tmpStruct struct {
 		Js struct {
 			Cmd string `json:"cmd"`
@@ -36,6 +36,17 @@ func (c *Channel) NewLink() (string, error) {
 	}
 
 	if err := json.Unmarshal(content, &tmp); err != nil {
+		// It could be that session has expired and user need to authenticate again.
+		log.Println("Failed to retrieve new link...")
+		if !retry && c.Portal.Username != "" && c.Portal.Password != "" {
+			log.Println("Attempting to re-authenticate user...")
+			if err2 := c.Portal.authenticate(); err2 != nil {
+				log.Println("Reauthentication failed...")
+				return "", err
+			}
+			log.Println("Reauthentication success, retrying to retrieve new link...")
+			return c.NewLink(true)
+		}
 		return "", err
 	}
 
